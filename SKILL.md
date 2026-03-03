@@ -3,7 +3,7 @@ name: skill-security-check
 description: "Security audit for Claude Code community skills. Scans SKILL.md, references/, and scripts/ for prompt injection, data exfiltration, permission bypass, dangerous commands, and supply chain risks. Use when you want to audit installed skills: /skill-security-check"
 metadata:
   author: aliks
-  version: "1.0.0"
+  version: "1.1.0"
 risk: low
 source: community
 ---
@@ -71,6 +71,36 @@ Scan all `SKILL.md`, `references/**/*.md`, and `scripts/**` files using Grep.
 - `--dangerously-skip-permissions`, `--approval-mode`, `yolo`
 - `danger-full-access`, `--no-verify`
 
+### 7. HTTP Exfiltration Bypass
+
+Detect patterns that bypass `curl`/`wget` deny rules by using language runtime inline execution:
+
+- **Python inline HTTP**: `python -c` / `python3 -c` with `urllib.request`, `requests.get`, `requests.post`, `http.client.HTTPConnection`, `http.client.HTTPSConnection`, `httpx.post`, `httpx.get`, `socket.connect`
+- **Node.js inline HTTP**: `node -e` with `fetch(`, `http.get(`, `https.get(`, `require('http')`, `require('https')`, `XMLHttpRequest`, `axios.get`, `axios.post`
+- **Bypass rationale**: when `curl` is in deny list but `Bash(python:*)` or `Bash(node:*)` is in allow list, HTTP exfiltration is still possible via inline scripts
+- **Environment variable piping**: `env | curl`, `printenv | python3`, `set | python -c`, `env | node -e` — patterns that pipe secrets to external HTTP calls
+
+### 8. Credential Access
+
+Detect patterns that access or reference credential files:
+
+- **SSH keys**: `~/.ssh/id_rsa`, `~/.ssh/id_ed25519`, `~/.ssh/id_*`, `~/.ssh/config`, `~/.ssh/authorized_keys`, `~/.ssh/known_hosts`
+- **AWS credentials**: `~/.aws/credentials`, `~/.aws/config`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`
+- **GCP credentials**: `application_default_credentials.json`, `gcloud/credentials.db`, `gcloud/properties`, `GOOGLE_APPLICATION_CREDENTIALS`
+- **Azure credentials**: `~/.azure/accessTokens.json`, `~/.azure/azureProfile.json`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`
+- **Encoding obfuscation**: `base64` encoding/decoding of credential content, `xxd` hex dump of key files — patterns that obscure credential theft
+
+### 9. Reverse Shell
+
+Detect reverse shell patterns that establish remote command execution:
+
+- **Bash**: `bash -i >& /dev/tcp/`, `bash -c 'exec bash -i &>/dev/tcp/'`
+- **Netcat**: `nc -e /bin/bash`, `nc -e /bin/sh`, `ncat -e`, `nc.traditional -e`
+- **Python**: `python -c 'import socket,subprocess,os;s=socket.socket(...)'`, `pty.spawn`
+- **Ruby**: `ruby -rsocket -e`, `TCPSocket.open`
+- **Perl**: `perl -e 'use Socket;'`, `perl -MIO::Socket`
+- **PowerShell**: `New-Object System.Net.Sockets.TCPClient`, `Invoke-Expression`, `IEX(New-Object Net.WebClient)`
+
 Report ALL hits (including false positives). Classification is done in the synthesis phase.
 
 ---
@@ -86,6 +116,8 @@ Analyze skills from an attacker's perspective. Read SKILL.md and referenced file
 3. **Data Theft** — paths to steal environment variables, `.env`, API keys, SSH keys, cloud credentials
 4. **Privilege Escalation Chains** — Skill A enables permissions → Skill B exploits them → dangerous operation
 5. **Trust Boundary Abuse** — leveraging trust in well-known brands/companies to reduce user vigilance
+6. **MCP Tool Poisoning** — malicious instructions embedded in MCP tool descriptions that override agent behavior. Includes hidden directives in tool `description` fields, tool update supply chain attacks (legitimate tool replaced with malicious version), and exploitation of MCP server trust boundaries. Reference CVEs: CVE-2025-6514 (mcp-remote SSRF/RCE via malicious MCP server), CVE-2026-21852 (API key theft via poisoned MCP tool description)
+7. **Settings.json Manipulation** — skills that modify Claude Code configuration to weaken security posture. Includes auto-enabling `enableAllProjectMcpServers: true`, injecting wildcard allow patterns (e.g., `Bash(* --version)` enabling arbitrary command execution), and exploiting `Bash(python:*)` / `Bash(node:*)` allow rules to bypass `curl`/`wget` deny lists
 
 ### Focus Areas
 
@@ -99,7 +131,7 @@ Analyze skills from an attacker's perspective. Read SKILL.md and referenced file
 
 ## Agent 3: Deep Analyzer
 
-Perform three analysis roles in a single agent:
+Perform four analysis roles in a single agent:
 
 ### Role A: Supply Chain Analysis
 
@@ -124,6 +156,15 @@ Perform three analysis roles in a single agent:
 - Sensitive directory access: `~/.ssh`, `~/.aws`, `~/.config`, `~/.gnupg`, `~/.env`
 - Output destination analysis: writes outside project directory, external transmission
 - Claude settings modification: `bypassPermissions`, permission mode changes
+
+### Role D: Settings & Hook Audit
+
+Analyze Claude Code configuration files for security misconfigurations:
+
+- **Permission patterns**: audit `permissions.allow` and `permissions.deny` arrays in `settings.json` — flag overly broad allow patterns (wildcards, `Bash(python:*)`, `Bash(node:*)`) and missing deny entries for dangerous commands
+- **Hook definitions**: examine PreToolUse and PostToolUse hook definitions for safety — flag hooks that execute arbitrary Bash commands, hooks that modify files outside project scope, and hooks that disable other security controls
+- **MCP server settings**: check for `enableAllProjectMcpServers: true` which auto-trusts all project-level MCP servers without user confirmation
+- **Hook command safety**: analyze Bash commands within hook definitions for dangerous patterns (data exfiltration, privilege escalation, credential access) — hooks run automatically and bypass normal approval flows
 
 ---
 

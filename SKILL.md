@@ -1,9 +1,9 @@
 ---
 name: skill-security-check
-description: "Security audit for Claude Code community skills. Scans SKILL.md, references/, and scripts/ for prompt injection, data exfiltration, permission bypass, dangerous commands, supply chain risks, and backdoor persistence. No additional tool installations required. Use: /skill-security-check"
+description: "Security audit for Claude Code community skills. Scans SKILL.md, references/, and scripts/ for prompt injection, data exfiltration, permission bypass, dangerous commands, supply chain risks, and backdoor persistence. Can be used as a Claude Code skill (agent-based) or as a standalone CLI tool (skill-scanner). Use: /skill-security-check"
 metadata:
   author: aliks
-  version: "1.2.0"
+  version: "2.0.0"
 risk: low
 source: community
 ---
@@ -11,6 +11,10 @@ source: community
 # Skill Security Check
 
 Comprehensive security audit for Claude Code community skills.
+
+Available in two modes:
+- **Skill mode**: 3 parallel Claude Code agents (no installation required)
+- **CLI mode**: `skill-scanner` Python package with YAML/YARA rules, AST analysis, and optional LLM/VirusTotal/AI Defense integration
 
 ## Trigger
 
@@ -34,6 +38,8 @@ This skill launches 3 parallel agents that deeply analyze every installed skill.
 | ~200 skills | 15-25 minutes |
 | ~500+ skills | 30-60 minutes |
 
+For faster scanning, use the CLI tool: `skill-scanner scan-all ~/.claude/skills/`
+
 ### Permission Confirmations
 
 Each agent performs many Grep/Read/Glob operations. Depending on your permission settings, you may be prompted frequently. For a smoother experience:
@@ -42,15 +48,88 @@ Each agent performs many Grep/Read/Glob operations. Depending on your permission
 - The skill only **reads** files — it never modifies or deletes anything
 - All file access is limited to the target skill directory
 
-### No Additional Installations Required
+### No Additional Installations Required (Skill Mode)
 
-This skill uses **only Claude Code built-in tools** (Grep, Glob, Read, Agent). No external CLI tools, no pip packages, no npm modules. It works out of the box.
+The skill mode uses **only Claude Code built-in tools** (Grep, Glob, Read, Agent). No external CLI tools, no pip packages, no npm modules. It works out of the box.
 
-> **Want deeper scanning?** For additional coverage beyond this skill, consider installing dedicated CLI security tools like [gitleaks](https://github.com/gitleaks/gitleaks), [semgrep](https://github.com/semgrep/semgrep), or [bandit](https://github.com/PyCQA/bandit) and running them separately on your projects.
+> **Want deeper scanning?** Install the CLI tool for YAML/YARA rule-based detection, AST analysis, and optional integrations:
+> ```bash
+> pip install skill-scanner
+> skill-scanner scan-all ~/.claude/skills/ --format markdown -o report.md
+> ```
 
 ---
 
-## Workflow
+## CLI Tool: skill-scanner (v2.0.0)
+
+### Installation
+
+```bash
+pip install skill-scanner
+```
+
+### Analyzers
+
+| Analyzer | Type | Description |
+|----------|------|-------------|
+| `static_analyzer` | Default | Pattern-based detection using YAML + YARA rules |
+| `bytecode_analyzer` | Default | Python .pyc integrity verification |
+| `pipeline_analyzer` | Default | Command pipeline taint analysis |
+| `behavioral_analyzer` | Opt-in | Static dataflow analysis (AST + taint tracking) |
+| `trigger_analyzer` | Opt-in | Detects overly generic skill descriptions |
+| `llm_analyzer` | Opt-in | Semantic analysis using LLMs as judges |
+| `meta_analyzer` | Opt-in | Second-pass LLM false-positive filtering & prioritization |
+| `virustotal_analyzer` | Opt-in | Hash-based malware detection via VirusTotal API |
+| `aidefense_analyzer` | Opt-in | Cisco AI Defense cloud-based threat detection |
+
+### Detection Rule Packs
+
+Built-in YAML signature packs (`core` pack):
+
+| Rule File | Coverage |
+|-----------|----------|
+| `prompt_injection` | IGNORE/OVERRIDE/system prompt spoofing, tag injection |
+| `data_exfiltration` | External HTTP, env var piping, base64 encoding |
+| `command_injection` | rm -rf, eval/exec, piped script execution, reverse shells |
+| `hardcoded_secrets` | API keys, tokens, passwords in source |
+| `obfuscation` | Zero-width characters, steganography, encoding tricks |
+| `social_engineering` | Authority/urgency/normalization bias patterns |
+| `supply_chain` | Missing metadata, author concentration, dynamic fetch |
+| `unauthorized_tool_use` | bypassPermissions, permission mode changes, settings manipulation |
+| `resource_abuse` | Crypto mining, excessive resource consumption |
+
+### Usage Examples
+
+```bash
+# Scan a single skill
+skill-scanner scan ~/.claude/skills/my-skill/
+
+# Scan all skills with markdown report
+skill-scanner scan-all ~/.claude/skills/ --format markdown -o report.md
+
+# Deep scan with behavioral analysis + LLM judge
+skill-scanner scan ~/.claude/skills/my-skill/ --use-behavioral --use-llm
+
+# CI/CD integration (fail on findings)
+skill-scanner scan-all ~/.claude/skills/ --format sarif --fail-on-findings
+
+# HTML interactive report
+skill-scanner scan-all ~/.claude/skills/ --format html -o report.html
+
+# Custom scan policy
+skill-scanner scan ~/.claude/skills/my-skill/ --policy strict
+
+# List available analyzers
+skill-scanner list-analyzers
+```
+
+### Output Formats
+
+`summary` (default), `json`, `markdown`, `table`, `sarif` (GitHub Code Scanning), `html` (interactive report)
+
+---
+
+## Skill Mode Workflow
 
 Launch **3 parallel agents** (all `general-purpose`, model: `sonnet`) for independent analysis, then synthesize results.
 
@@ -275,6 +354,18 @@ Produce a report with:
 ---
 
 ## Changelog
+
+### v2.0.0 (2026-03-07)
+
+- **CLI tool released**: `pip install skill-scanner` — standalone Python package
+- 9 pluggable analyzers: static (YAML+YARA), bytecode, pipeline, behavioral (AST+taint), trigger, LLM judge, meta (FP filtering), VirusTotal, Cisco AI Defense
+- YAML signature rule packs: 10 categories (prompt_injection, data_exfiltration, command_injection, hardcoded_secrets, obfuscation, social_engineering, supply_chain, unauthorized_tool_use, resource_abuse)
+- Multiple output formats: summary, json, markdown, table, sarif (GitHub Code Scanning), html (interactive)
+- Scan policy system: `--policy` presets and custom YAML policies
+- `scan-all` command for batch scanning entire skill directories
+- `interactive` wizard mode for guided scanning
+- `generate-policy` / `configure-policy` for custom rule configuration
+- `--fail-on-findings` / `--fail-on-severity` for CI/CD integration
 
 ### v1.2.0 (2026-03-04)
 

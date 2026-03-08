@@ -3,7 +3,7 @@ name: skill-security-check
 description: "Security audit for Claude Code community skills. Scans SKILL.md, references/, and scripts/ for prompt injection, data exfiltration, permission bypass, dangerous commands, supply chain risks, backdoor persistence, API endpoint hijacking, namespace squatting, Unicode homoglyph attacks, context window poisoning, and temporal attack patterns. Can be used as a Claude Code skill (agent-based) or as a standalone CLI tool (skill-scanner). Use: /skill-security-check"
 metadata:
   author: aliks
-  version: "2.1.0"
+  version: "2.1.1"
 risk: low
 source: community
 ---
@@ -412,7 +412,31 @@ Produce a report with:
 
 ---
 
+## Runtime Defense: MCP Response Inspector Hook
+
+In addition to static analysis, this project includes a **runtime PostToolUse hook** that inspects MCP tool responses in real-time.
+
+See [`hooks/README.md`](hooks/README.md) for installation and details.
+
+**Why runtime matters**: Static analysis catches malicious patterns in skill files *before* execution. But MCP server responses arrive *at runtime* — the same structural vulnerability as cloned OSS backdoors where AI follows existing patterns including malicious ones. Without runtime inspection, injected instructions in MCP responses are treated as trusted data.
+
+| Layer | Tool | When |
+|-------|------|------|
+| Static | `skill-scanner` / Skill mode agents | Before execution (skill audit) |
+| Runtime | `mcp-response-inspector.mjs` hook | During execution (MCP response inspection) |
+| Policy | FIDES trust levels | Always (data trust classification) |
+
+---
+
 ## Changelog
+
+### v2.1.1 (2026-03-09)
+
+- **New: MCP Response Inspector Hook** (`hooks/mcp-response-inspector.mjs`) — runtime PostToolUse hook for MCP response inspection
+  - Detects: prompt injection, dangerous commands, data exfiltration, suspicious URLs, hidden content (zero-width chars, bidi override)
+  - CRITICAL findings on untrusted MCP → blocks response (exit 2)
+  - Trusted MCP whitelist for false positive reduction
+  - FIDES LOW enforcement at runtime
 
 ### v2.1.0 (2026-03-08)
 

@@ -1,0 +1,86 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowDevStagingDeploy",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:*",
+        "rds:*",
+        "ecs:*",
+        "s3:*",
+        "lambda:*",
+        "cloudformation:*",
+        "cloudwatch:*",
+        "logs:*",
+        "elasticloadbalancing:*",
+        "route53:*",
+        "ssm:*",
+        "tag:*",
+        "iam:GetRole",
+        "iam:PassRole",
+        "iam:ListRoles",
+        "sts:GetCallerIdentity",
+        "sts:AssumeRole"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": ["ap-northeast-1"]
+        }
+      }
+    },
+    {
+      "Sid": "DenyDestructiveOnProd",
+      "Effect": "Deny",
+      "Action": [
+        "ec2:TerminateInstances",
+        "ec2:DeleteVpc",
+        "ec2:DeleteSubnet",
+        "ec2:DeleteSecurityGroup",
+        "rds:DeleteDBInstance",
+        "rds:DeleteDBCluster",
+        "ecs:DeleteCluster",
+        "ecs:DeleteService",
+        "s3:DeleteBucket",
+        "lambda:DeleteFunction",
+        "cloudformation:DeleteStack",
+        "elasticloadbalancing:DeleteLoadBalancer",
+        "route53:DeleteHostedZone"
+      ],
+      "Resource": "arn:aws:*:*:*:*prod*",
+      "Condition": {
+        "StringLike": {
+          "aws:ResourceTag/Environment": ["production", "prod"]
+        }
+      }
+    },
+    {
+      "Sid": "DenyIAMEscalation",
+      "Effect": "Deny",
+      "Action": [
+        "iam:CreateUser",
+        "iam:CreateAccessKey",
+        "iam:AttachRolePolicy",
+        "iam:AttachUserPolicy",
+        "iam:PutRolePolicy",
+        "iam:PutUserPolicy",
+        "iam:CreateLoginProfile",
+        "iam:UpdateAssumeRolePolicy",
+        "iam:DeleteRole",
+        "iam:DeletePolicy",
+        "iam:DeleteUser"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DenyAccountOperations",
+      "Effect": "Deny",
+      "Action": [
+        "organizations:*",
+        "account:CloseAccount"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

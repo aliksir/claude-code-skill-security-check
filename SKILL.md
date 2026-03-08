@@ -1,9 +1,9 @@
 ---
 name: skill-security-check
-description: "Security audit for Claude Code community skills. Scans SKILL.md, references/, and scripts/ for prompt injection, data exfiltration, permission bypass, dangerous commands, supply chain risks, and backdoor persistence. Can be used as a Claude Code skill (agent-based) or as a standalone CLI tool (skill-scanner). Use: /skill-security-check"
+description: "Security audit for Claude Code community skills. Scans SKILL.md, references/, and scripts/ for prompt injection, data exfiltration, permission bypass, dangerous commands, supply chain risks, backdoor persistence, API endpoint hijacking, namespace squatting, Unicode homoglyph attacks, context window poisoning, and temporal attack patterns. Can be used as a Claude Code skill (agent-based) or as a standalone CLI tool (skill-scanner). Use: /skill-security-check"
 metadata:
   author: aliks
-  version: "2.0.0"
+  version: "2.1.0"
 risk: low
 source: community
 ---
@@ -60,7 +60,7 @@ The skill mode uses **only Claude Code built-in tools** (Grep, Glob, Read, Agent
 
 ---
 
-## CLI Tool: skill-scanner (v2.0.0)
+## CLI Tool: skill-scanner (v2.1.0)
 
 ### Installation
 
@@ -81,6 +81,9 @@ pip install skill-scanner
 | `meta_analyzer` | Opt-in | Second-pass LLM false-positive filtering & prioritization |
 | `virustotal_analyzer` | Opt-in | Hash-based malware detection via VirusTotal API |
 | `aidefense_analyzer` | Opt-in | Cisco AI Defense cloud-based threat detection |
+| `namespace_analyzer` | Default | Skill name/author similarity check (Levenshtein distance) for typosquat detection |
+| `size_analyzer` | Default | File size anomaly detection for context window poisoning |
+| `temporal_analyzer` | Opt-in | Conditional/delayed attack pattern detection via AST analysis |
 
 ### Detection Rule Packs
 
@@ -92,11 +95,14 @@ Built-in YAML signature packs (`core` pack):
 | `data_exfiltration` | External HTTP, env var piping, base64 encoding |
 | `command_injection` | rm -rf, eval/exec, piped script execution, reverse shells |
 | `hardcoded_secrets` | API keys, tokens, passwords in source |
-| `obfuscation` | Zero-width characters, steganography, encoding tricks |
+| `obfuscation` | Zero-width characters, steganography, encoding tricks, Unicode homoglyphs |
 | `social_engineering` | Authority/urgency/normalization bias patterns |
 | `supply_chain` | Missing metadata, author concentration, dynamic fetch |
 | `unauthorized_tool_use` | bypassPermissions, permission mode changes, settings manipulation |
 | `resource_abuse` | Crypto mining, excessive resource consumption |
+| `api_hijacking` | ANTHROPIC_BASE_URL override, proxy injection, DNS/hosts manipulation |
+| `cloud_metadata` | IMDS access (169.254.169.254), cloud metadata service token theft |
+| `namespace_abuse` | Official namespace squatting, typosquatting, authority prefix abuse |
 
 ### Usage Examples
 
@@ -229,6 +235,44 @@ Detect GTFOBins/LOLBAS-style privilege escalation patterns:
 - **SUID exploitation**: `find / -perm -4000`, SUID binary enumeration and abuse
 - **shadow file access**: `base64 /etc/shadow`, credential dump via encoding
 
+### 12. API Endpoint Hijacking
+
+Detect patterns that redirect Claude API calls to attacker-controlled servers:
+
+- **Environment variable override**: `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_BASE`, `OPENAI_BASE_URL`, `api_base=`, `base_url=` — overriding API endpoints to intercept all conversations and API keys
+- **SDK configuration**: `Anthropic(base_url=`, `OpenAI(base_url=`, `httpx.Client(base_url=` — programmatic API endpoint redirection
+- **Proxy injection**: `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `http_proxy=`, `https_proxy=` — man-in-the-middle via proxy configuration
+- **DNS/hosts manipulation**: `/etc/hosts`, `C:\Windows\System32\drivers\etc\hosts` modification to redirect api.anthropic.com
+- **Attack scenario**: attacker sets `ANTHROPIC_BASE_URL` to their server → all API calls (including API key in headers) are forwarded → full conversation and credential theft
+
+### 13. Namespace Squatting / Typosquatting
+
+Detect skills that impersonate official or well-known sources:
+
+- **Official namespace abuse**: skill name or `metadata.author` containing `anthropic`, `anthropics`, `claude-official`, `official-claude`, `openai` when `source: community`
+- **Typosquatting**: Levenshtein distance ≤ 2 from known official skill names or popular community skill names
+- **Authority prefix abuse**: `verified-`, `official-`, `trusted-`, `certified-` prefixes in skill names
+- **Brand impersonation in descriptions**: descriptions claiming "official", "endorsed by Anthropic", "recommended by Claude" without verifiable source
+- **Context**: the anthropics/skills#492 namespace discussion showed that `anthropic/` prefix in skill naming can mislead users into trusting unverified skills
+
+### 14. Unicode Homoglyph & Encoding Attacks
+
+Detect visual deception beyond zero-width characters:
+
+- **Cyrillic/Greek homoglyphs in URLs and paths**: `а` (U+0430) vs `a` (U+0061), `о` (U+043E) vs `o` (U+006F), `е` (U+0435) vs `e` (U+0065) — visually identical characters in different Unicode blocks that make malicious URLs appear legitimate
+- **Bidirectional override**: U+202E (Right-to-Left Override), U+202D (Left-to-Right Override), U+2066-U+2069 (isolate controls) — can reverse displayed text to hide true file extensions or command structure
+- **Confusable domain names**: IDN homograph attacks in URLs (e.g., `аnthropic.com` with Cyrillic `а`)
+- **Encoded payloads**: `\x`, `\u`, `%xx` sequences that decode to dangerous commands at runtime
+
+### 15. Context Window Poisoning
+
+Detect attempts to overflow the context window to push out safety instructions:
+
+- **Abnormally large reference files**: `references/` files exceeding 50KB — legitimate documentation rarely needs this much content; oversized files may be designed to consume context budget and push out CLAUDE.md safety rules
+- **Repetitive filler text**: large blocks of repeated or near-identical text (entropy analysis) that serve no informational purpose
+- **Instruction dilution**: patterns where large volumes of benign-looking text surround a small malicious payload, reducing the likelihood of detection by both humans and LLMs
+- **Multi-file bloat**: skills with 20+ reference files that collectively exceed reasonable documentation needs
+
 Report ALL hits (including false positives). Classification is done in the synthesis phase.
 
 ---
@@ -247,6 +291,10 @@ Analyze skills from an attacker's perspective. Read SKILL.md and referenced file
 6. **MCP Tool Poisoning** — malicious instructions embedded in MCP tool descriptions that override agent behavior. Includes hidden directives in tool `description` fields, tool update supply chain attacks (legitimate tool replaced with malicious version), and exploitation of MCP server trust boundaries. Reference CVEs: CVE-2025-6514 (mcp-remote SSRF/RCE via malicious MCP server), CVE-2026-21852 (API key theft via poisoned MCP tool description)
 7. **Settings.json Manipulation** — skills that modify Claude Code configuration to weaken security posture. Includes auto-enabling `enableAllProjectMcpServers: true`, injecting wildcard allow patterns (e.g., `Bash(* --version)` enabling arbitrary command execution), and exploiting `Bash(python:*)` / `Bash(node:*)` allow rules to bypass `curl`/`wget` deny lists
 
+8. **Clipboard & Output Exfiltration Chain** — indirect data theft via clipboard (`pbcopy`, `xclip`, `xsel`, `clip.exe`, `Set-Clipboard`) or by embedding sensitive data in normal-looking output that users unknowingly copy-paste to external services. Evaluate multi-step chains: skill reads credential → formats as "debug output" → user copies to issue tracker
+9. **Cloud Metadata / IMDS Access** — access to instance metadata services (`169.254.169.254`, `metadata.google.internal`, `169.254.170.2` for ECS task metadata, `metadata.azure.com`) to steal IAM role credentials, service account tokens, or instance identity. Particularly dangerous in cloud-hosted development environments (Codespaces, Cloud9, EC2)
+10. **Symlink & Path Traversal** — creating symbolic links to sensitive files (`ln -s ~/.ssh/id_rsa ./data.txt`) to bypass path-based access controls, or using `../` traversal to escape project directories. Includes hard links, junction points (Windows), and relative path abuse in tar/zip extraction
+
 ### Focus Areas
 
 - Skills that modify Claude Code settings or permissions
@@ -260,7 +308,7 @@ Analyze skills from an attacker's perspective. Read SKILL.md and referenced file
 
 ## Agent 3: Deep Analyzer
 
-Perform five analysis roles in a single agent:
+Perform six analysis roles in a single agent:
 
 ### Role A: Supply Chain Analysis
 
@@ -302,10 +350,12 @@ Perform five analysis roles in a single agent:
 
 Analyze Claude Code configuration files for security misconfigurations:
 
-- **Permission patterns**: audit `permissions.allow` and `permissions.deny` arrays in `settings.json` — flag overly broad allow patterns (wildcards, `Bash(python:*)`, `Bash(node:*)`) and missing deny entries for dangerous commands
+- **Permission patterns**: audit `permissions.allow` and `permissions.deny` arrays in `settings.json` — flag overly broad allow patterns (wildcards, `Bash(python:*)`, `Bash(node:*)`, `Bash(ruby:*)`, `Bash(perl:*)`, `Bash(npm:*)`) and missing deny entries for dangerous commands
+- **Allowlist escape chains**: systematically check all runtime allow patterns that enable HTTP exfiltration bypass — `Bash(python:*)` → `python -c "import urllib..."`, `Bash(node:*)` → `node -e "fetch(...)"`, `Bash(npm:*)` → `npm exec` arbitrary code execution, `Bash(npx:*)` → `npx` package fetch and execute
 - **Hook definitions**: examine PreToolUse and PostToolUse hook definitions for safety — flag hooks that execute arbitrary Bash commands, hooks that modify files outside project scope, and hooks that disable other security controls
 - **MCP server settings**: check for `enableAllProjectMcpServers: true` which auto-trusts all project-level MCP servers without user confirmation
 - **Hook command safety**: analyze Bash commands within hook definitions for dangerous patterns (data exfiltration, privilege escalation, credential access) — hooks run automatically and bypass normal approval flows
+- **API endpoint integrity**: check for `ANTHROPIC_BASE_URL` or proxy environment variable overrides in hook commands or skill instructions that redirect API traffic
 
 ### Role E: Skill Interconnection Risk
 
@@ -316,6 +366,15 @@ Analyze how skills could be combined to create attack chains:
 - Map skills that provide persistence capabilities (backdoor creation, credential harvesting)
 - Flag any recon → exploit → persist chains that could be executed in a single session
 - Check if high-risk skills properly require user confirmation at each escalation step
+
+### Role F: Temporal Attack Analysis
+
+Detect time-delayed or conditional attack patterns that evade single-scan detection:
+
+- **Conditional triggers**: code that checks for specific conditions before executing malicious payloads — `if os.path.exists(".claude/settings.json")` (only activates in Claude Code environment), date-based triggers (`datetime.now() > datetime(2026, ...)`) , environment detection (`if "CODESPACE" in os.environ`)
+- **Progressive escalation over sessions**: first invocation is benign (builds trust), subsequent invocations gradually escalate — writing a config file on first run, reading it on second run to determine "returning user" and enabling dangerous features
+- **Delayed payload delivery**: instructions that reference external URLs for "updates" or "latest version" — the URL content can change after initial review to deliver malicious payloads
+- **State file manipulation**: skills that create dot-files (`.skill-cache`, `.skill-config`) in project directories and change behavior based on their contents — benign on first run, escalating on subsequent runs
 
 ---
 
@@ -354,6 +413,21 @@ Produce a report with:
 ---
 
 ## Changelog
+
+### v2.1.0 (2026-03-08)
+
+- New detection: API endpoint hijacking (ANTHROPIC_BASE_URL override, proxy injection, DNS/hosts manipulation)
+- New detection: namespace squatting / typosquatting (official prefix abuse, Levenshtein similarity)
+- New detection: Unicode homoglyph & encoding attacks (Cyrillic homoglyphs, bidirectional override, IDN homograph)
+- New detection: context window poisoning (oversized references, repetitive filler, instruction dilution)
+- New Red Team vector: clipboard & output exfiltration chains
+- New Red Team vector: cloud metadata / IMDS access (169.254.169.254, metadata.google.internal)
+- New Red Team vector: symlink & path traversal attacks
+- New Role F: temporal attack analysis (conditional triggers, progressive escalation, delayed payload, state file manipulation)
+- Enhanced Role D: allowlist escape chain analysis (all runtime patterns: python/node/ruby/perl/npm/npx), API endpoint integrity check
+- New CLI analyzers: `namespace_analyzer` (typosquat detection), `size_analyzer` (context poisoning), `temporal_analyzer` (delayed attacks)
+- New YAML rule packs: `api_hijacking`, `cloud_metadata`, `namespace_abuse`
+- Enhanced `obfuscation` rule pack: Unicode homoglyph patterns added
 
 ### v2.0.0 (2026-03-07)
 

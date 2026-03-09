@@ -3,7 +3,7 @@ name: skill-security-check
 description: "Security audit for Claude Code community skills. Scans SKILL.md, references/, and scripts/ for prompt injection, data exfiltration, permission bypass, dangerous commands, supply chain risks, backdoor persistence, API endpoint hijacking, namespace squatting, Unicode homoglyph attacks, context window poisoning, and temporal attack patterns. Can be used as a Claude Code skill (agent-based) or as a standalone CLI tool (skill-scanner). Use: /skill-security-check"
 metadata:
   author: aliks
-  version: "2.1.2"
+  version: "2.1.3"
 risk: low
 source: community
 ---
@@ -424,12 +424,21 @@ See [`hooks/README.md`](hooks/README.md) for installation and details.
 |-------|------|------|
 | Static | `skill-scanner` / Skill mode agents | Before execution (skill audit) |
 | Runtime | `mcp-response-inspector.mjs` hook | During execution (MCP response inspection) |
+| Runtime | `validate-bash.sh` hook | During execution (dangerous command prevention) |
 | Runtime | `ghost-file-detector.sh` hook | During execution (AI anti-pattern detection) |
 | Policy | FIDES trust levels | Always (data trust classification) |
 
 ---
 
 ## Changelog
+
+### v2.1.3 (2026-03-09)
+
+- **New: validate-bash.sh** (`hooks/validate-bash.sh`) — PreToolUse hook that blocks dangerous Bash commands
+  - 9-tier defense: system destruction, git force push, git add -A, piped script execution, HTTP exfiltration, credential access, env exfiltration, AWS/IaC destruction, reverse shells
+  - All deny messages include actionable fix suggestions (→ 代替: ...)
+  - Quote-aware: literal strings inside `"..."` and `'...'` are excluded from Tier 1-4, 8-9 checks to prevent false positives (e.g., PR body text mentioning `git push --force`)
+  - Tier 5-7.5 intentionally inspect quoted content (inline code HTTP exfiltration, credential access patterns must be caught even in quotes)
 
 ### v2.1.2 (2026-03-09)
 

@@ -130,6 +130,81 @@ Add this entry to the `hooks.PostToolUse` array in `~/.claude/settings.json`:
 - Non-Write tools are ignored (zero overhead)
 - No dependencies — pure bash + jq
 
+---
+
+# Validate Bash Hook
+
+PreToolUse hook that blocks dangerous Bash commands with a 9-tier defense system. Includes quote-aware false positive prevention.
+
+## Why
+
+AI coding agents execute Bash commands autonomously. Without guardrails, they can run destructive operations (`rm -rf /`, `git push --force`), exfiltrate data (`python -c "import requests; ..."`), or access credentials (`cat ~/.ssh/id_rsa`). This hook provides a defense layer that catches these patterns before execution.
+
+## What it blocks
+
+| Tier | Category | Severity | Examples |
+|------|----------|----------|---------|
+| 1 | System destruction | CRITICAL | `rm -rf /etc`, `format C:`, `del /f` |
+| 2 | Git force operations | HIGH | `git push --force`, `git push origin main`, `git reset --hard` |
+| 3 | Git mass staging | MEDIUM | `git add -A`, `git add .`, `git add --all` |
+| 4 | Piped script execution | HIGH | `curl \| bash`, `wget \| sh` |
+| 5 | HTTP exfiltration bypass | HIGH | `python -c "import requests"`, `node -e "fetch(...)"` |
+| 6 | Credential access | HIGH | `cat ~/.ssh/id_rsa`, `cat ~/.aws/credentials` |
+| 7 | Env variable exfiltration | HIGH | `env \| curl`, `printenv \| python` |
+| 7.5 | Scan result exfiltration | MEDIUM | `curl --data-binary @report.json` |
+| 8 | AWS/IaC destruction | HIGH | `aws s3api delete-bucket`, `terraform destroy`, `cdk destroy` |
+| 9 | Reverse shells | CRITICAL | `bash -i >& /dev/tcp/`, `nc -e /bin/bash` |
+
+## Quote-aware false positive prevention
+
+The hook strips content inside `"..."` and `'...'` before checking Tier 1-4 and Tier 8-9 patterns. This prevents false positives when dangerous keywords appear as literal strings (e.g., in PR body text or echo statements).
+
+Tier 5-7.5 intentionally inspect quoted content because inline code exfiltration (`python -c "import requests"`) and credential access patterns must be caught even inside quotes.
+
+## Install
+
+### 1. Copy the hook file
+
+```bash
+mkdir -p ~/.claude/hooks/pre_tool_use/
+cp hooks/validate-bash.sh ~/.claude/hooks/pre_tool_use/
+chmod +x ~/.claude/hooks/pre_tool_use/validate-bash.sh
+```
+
+### 2. Add to settings.json
+
+Add this entry to the `hooks.PreToolUse` array in `~/.claude/settings.json`:
+
+```json
+{
+  "matcher": "Bash",
+  "hooks": [
+    {
+      "type": "command",
+      "command": "bash ~/.claude/hooks/pre_tool_use/validate-bash.sh",
+      "timeout": 5
+    }
+  ]
+}
+```
+
+## Behavior
+
+- **Deny with fix suggestion** — every blocked command includes an actionable alternative
+- **Quote-aware** — literal strings in `"..."` / `'...'` don't trigger false positives (Tier 1-4, 8-9)
+- **Non-Bash tools** — skipped entirely (zero overhead)
+- **No dependencies** — pure bash + jq + grep + sed
+
+## Customization
+
+Add project-specific deny rules by appending new `if` blocks before `exit 0`:
+
+```bash
+if echo "$command_unquoted" | grep -qE 'your-pattern'; then
+  deny "Description" "Suggested alternative"
+fi
+```
+
 ## License
 
 MIT

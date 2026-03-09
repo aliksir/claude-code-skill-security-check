@@ -3,7 +3,7 @@ name: skill-security-check
 description: "Security audit for Claude Code community skills. Scans SKILL.md, references/, and scripts/ for prompt injection, data exfiltration, permission bypass, dangerous commands, supply chain risks, backdoor persistence, API endpoint hijacking, namespace squatting, Unicode homoglyph attacks, context window poisoning, and temporal attack patterns. Can be used as a Claude Code skill (agent-based) or as a standalone CLI tool (skill-scanner). Use: /skill-security-check"
 metadata:
   author: aliks
-  version: "2.1.1"
+  version: "2.1.2"
 risk: low
 source: community
 ---
@@ -424,11 +424,23 @@ See [`hooks/README.md`](hooks/README.md) for installation and details.
 |-------|------|------|
 | Static | `skill-scanner` / Skill mode agents | Before execution (skill audit) |
 | Runtime | `mcp-response-inspector.mjs` hook | During execution (MCP response inspection) |
+| Runtime | `ghost-file-detector.sh` hook | During execution (AI anti-pattern detection) |
 | Policy | FIDES trust levels | Always (data trust classification) |
 
 ---
 
 ## Changelog
+
+### v2.1.2 (2026-03-09)
+
+- **New: Ghost File Detector Hook** (`hooks/ghost-file-detector.sh`) — PostToolUse hook that detects AI-generated "ghost files"
+  - Catches common anti-pattern: creating `utils2.py` instead of editing `utils.py`
+  - Detects numeric suffixes, `_new`, `_copy`, `_backup`, `_old`, `_v*` patterns
+  - Warning-only (does not block) — the file may be intentional
+  - Reference: AI-generated code creates ghost files in 90-100% of repositories (Harness Engineering Best Practices 2026)
+- **Improved: validate-bash.sh error messages** — all deny messages now include actionable fix suggestions
+  - Example: `git push --force は禁止 → 代替: git push --force-with-lease`
+  - Principle: "Agents can ignore docs but cannot ignore linter errors" — error messages with fix examples guide correct behavior
 
 ### v2.1.1 (2026-03-09)
 

@@ -32,6 +32,12 @@ CHANGELOG_WEB_URL="https://github.com/aliksir/claude-code-skill-security-check/b
 # ユーティリティ関数
 # -------------------------------------------------------------------
 
+# Windows (schannel) では証明書失効チェックが失敗するため --ssl-no-revoke を付与
+CURL_OPTS="--max-time 10"
+if [[ "$(uname -s)" == MINGW* ]] || [[ "$(uname -s)" == MSYS* ]] || [[ -n "${MSYSTEM:-}" ]]; then
+    CURL_OPTS="${CURL_OPTS} --ssl-no-revoke"
+fi
+
 # スクリプトのディレクトリから親ディレクトリ（リポジトリルート）を解決
 get_repo_root() {
     local script_dir
@@ -63,7 +69,7 @@ get_remote_version() {
 
     local remote_version
     remote_version="$(
-        curl -sL --max-time 10 "${REMOTE_CHANGELOG_URL}" 2>/dev/null \
+        curl -sL ${CURL_OPTS} "${REMOTE_CHANGELOG_URL}" 2>/dev/null \
         | grep -m1 '^## v' \
         | sed 's/## v\([^ ]*\).*/\1/'
     )"

@@ -3,7 +3,7 @@ name: skill-security-check
 description: "Security audit for Claude Code community skills. Scans SKILL.md, references/, and scripts/ for prompt injection, data exfiltration, permission bypass, dangerous commands, supply chain risks, backdoor persistence, API endpoint hijacking, namespace squatting, Unicode homoglyph attacks, context window poisoning, and temporal attack patterns. Can be used as a Claude Code skill (agent-based) or as a standalone CLI tool (skill-scanner). Use: /skill-security-check"
 metadata:
   author: aliks
-  version: "2.1.3"
+  version: "2.2.0"
 risk: low
 source: community
 ---
@@ -60,7 +60,9 @@ The skill mode uses **only Claude Code built-in tools** (Grep, Glob, Read, Agent
 
 ---
 
-## CLI Tool: skill-scanner (v2.1.0)
+## CLI Tool: skill-scanner
+
+> Note: The CLI tool (`skill-scanner`) has its own release cycle on PyPI, separate from this skill's version.
 
 ### Installation
 
@@ -273,6 +275,68 @@ Detect attempts to overflow the context window to push out safety instructions:
 - **Instruction dilution**: patterns where large volumes of benign-looking text surround a small malicious payload, reducing the likelihood of detection by both humans and LLMs
 - **Multi-file bloat**: skills with 20+ reference files that collectively exceed reasonable documentation needs
 
+### 16. XOR/Dynamic Encoding Obfuscation
+
+Detect static analysis evasion techniques used in campaigns such as ClawHavoc:
+
+- `xor`, `^=`, `bytes([a ^ b for` — XOR operations for payload reconstruction
+- `chr(ord(` / `String.fromCharCode` — dynamic string assembly from character codes
+- `eval(bytes(`, `exec(bytes(` — dynamic code execution from byte sequences
+- Base85 (`b85decode`) / Base32 (`b32decode`) — uncommon encodings (non-Base64)
+- `compile(`, `marshal.loads(` — dynamic loading of Python bytecode
+
+### 17. Agent-to-Agent Infection & Lateral Movement
+
+Detect P2P infection exploiting automated collaboration features:
+
+- `skill install`, `skill add` — instructions to auto-install other skills
+- `collaborate with`, `invoke agent`, `spawn agent` — automated inter-agent invocation
+- Instructions to auto-deploy to other environments ("install this in all your projects", etc.)
+- `spread`, `propagate`, `replicate` — patterns suggesting self-replication
+
+### 18. Silent Codebase Exfiltration via DoD Manipulation
+
+Detect Definition of Done manipulation to justify sending out entire codebases:
+
+- `do not commit until all tasks complete` — delaying commits to wait for exfiltration completion
+- `read all files in`, `aggregate codebase`, `collect all source` — bulk codebase reading
+- `find . -name "*.py" -exec cat`, `find . -type f` — recursive file collection
+- `backup`, `archive`, `snapshot` combined with external URL transmission
+
+### 19. MCP Tool Redefinition Attack
+
+Detect tool shadowing when multiple MCP servers run in the same environment:
+
+- Definitions of `tool_name` / `function_name` identical to existing tools
+- `override`, `replace`, `shadow` combined with tool definitions
+- Instructions for dynamic modification of MCP server settings
+
+### 20. API Budget Drain (DoS)
+
+Detect intentional token consumption as an API cost attack:
+
+- `think step by step in extreme detail about every possible` — excessive thinking induction
+- Instructions for infinite loops or recursive self-reference
+- Injecting massive context (instructing unnecessary reading of large numbers of files)
+- `repeat`, `enumerate all`, `list every possible` — exhaustive enumeration instructions
+
+### 21. Auto Mode Exploitation
+
+Detect exploitation of autonomous permission decision weaknesses:
+
+- `this will be automatically approved` — spoofing automatic approval
+- `no confirmation needed`, `skip approval` — instructions to skip approval
+- Procedures written assuming Auto Mode will execute dangerous operations without human confirmation
+
+### 22. Multi-Turn Grooming
+
+Detect gradual privilege escalation across multiple sessions:
+
+- `Phase 1: setup`, `Phase 2: configure`, `Phase 3: deploy` — phased escalation
+- Patterns where first invocation is benign, subsequent invocations execute dangerous operations
+- `if first_run`, `if returning_user` — branching based on invocation count
+- Trust building followed by privilege escalation (showing safe operations first, then the actual payload)
+
 Report ALL hits (including false positives). Classification is done in the synthesis phase.
 
 ---
@@ -294,6 +358,9 @@ Analyze skills from an attacker's perspective. Read SKILL.md and referenced file
 8. **Clipboard & Output Exfiltration Chain** — indirect data theft via clipboard (`pbcopy`, `xclip`, `xsel`, `clip.exe`, `Set-Clipboard`) or by embedding sensitive data in normal-looking output that users unknowingly copy-paste to external services. Evaluate multi-step chains: skill reads credential → formats as "debug output" → user copies to issue tracker
 9. **Cloud Metadata / IMDS Access** — access to instance metadata services (`169.254.169.254`, `metadata.google.internal`, `169.254.170.2` for ECS task metadata, `metadata.azure.com`) to steal IAM role credentials, service account tokens, or instance identity. Particularly dangerous in cloud-hosted development environments (Codespaces, Cloud9, EC2)
 10. **Symlink & Path Traversal** — creating symbolic links to sensitive files (`ln -s ~/.ssh/id_rsa ./data.txt`) to bypass path-based access controls, or using `../` traversal to escape project directories. Includes hard links, junction points (Windows), and relative path abuse in tar/zip extraction
+11. **DoD Manipulation for Silent Exfiltration** — skills that define Definition of Done in a way that instructs the agent to send out the entire codebase voluntarily — e.g., "do not commit changes until all tasks are complete" delays commits while exfiltration completes. Confirmed in real-world environments by Mitiga research
+12. **MCP Tool Redefinition / Shadowing** — a malicious MCP server provides an implementation with the same name as a legitimate tool, intercepting data. Succeeds through identifier collision alone and is difficult to detect
+13. **API Budget Drain Attack** — intentionally induces overthinking to explode API token consumption, functioning as a DoS-style attack
 
 ### Focus Areas
 
@@ -376,6 +443,14 @@ Detect time-delayed or conditional attack patterns that evade single-scan detect
 - **Delayed payload delivery**: instructions that reference external URLs for "updates" or "latest version" — the URL content can change after initial review to deliver malicious payloads
 - **State file manipulation**: skills that create dot-files (`.skill-cache`, `.skill-config`) in project directories and change behavior based on their contents — benign on first run, escalating on subsequent runs
 
+### Role G: Auto Mode Risk Analysis
+
+Analyze risks specific to Claude Code Auto Mode (research preview as of 2026-03):
+
+- **Auto Mode-assumed operation instructions**: descriptions stating "no confirmation required" or "this will be automatically approved", assuming Auto Mode will execute dangerous operations without human review
+- **Attacks that only succeed in Auto Mode**: patterns designed to bypass human approval — evaluate whether the attack would fail if a human were in the loop
+- **Exploitation of areas Anthropic itself acknowledges as incompletely protected**: deliberate abuse of known limitations, such as indirect prompt injection via external data sources, trust boundary confusion between skill instructions and MCP responses, and operations that are individually safe but dangerous in sequence
+
 ---
 
 ## Synthesis (Main Agent)
@@ -385,8 +460,8 @@ After all 3 agents report, classify every finding:
 | Verdict | Criteria | Action |
 |---------|----------|--------|
 | **DELETE** | Sends credentials to unofficial external servers / auto-enables bypassPermissions / confirmed prompt injection | Remove immediately |
-| **ACTION REQUIRED** | shell=True with user input / plaintext credential storage / recursive .env search in parent dirs / piped shell execution / backdoor persistence instructions without risk:high | Fix or establish operational rules |
-| **CAUTION** | External API dependency (API key required) / educational attack patterns / cognitive manipulation false positives / high-risk skills properly marked with risk:high | Note for awareness |
+| **ACTION REQUIRED** | shell=True with user input / plaintext credential storage / recursive .env search in parent dirs / piped shell execution / backdoor persistence instructions without risk:high / XOR/dynamic encoding obfuscation / agent-to-agent auto-install instructions | Fix or establish operational rules |
+| **CAUTION** | External API dependency (API key required) / educational attack patterns / cognitive manipulation false positives / high-risk skills properly marked with risk:high / Auto Mode-assumed operation instructions (harmless in non-Auto Mode environments) | Note for awareness |
 | **CLEAN** | No issues found | No action needed |
 
 ### Output Format
@@ -423,6 +498,7 @@ See [`hooks/README.md`](hooks/README.md) for installation and details.
 | Layer | Tool | When |
 |-------|------|------|
 | Static | `skill-scanner` / Skill mode agents | Before execution (skill audit) |
+| Static | Community threat intel | Before execution (latest attack patterns) |
 | Runtime | `mcp-response-inspector.mjs` hook | During execution (MCP response inspection) |
 | Runtime | `validate-bash.sh` hook | During execution (dangerous command prevention) |
 | Runtime | `ghost-file-detector.sh` hook | During execution (AI anti-pattern detection) |
@@ -432,120 +508,7 @@ See [`hooks/README.md`](hooks/README.md) for installation and details.
 
 ## Changelog
 
-### v2.1.3 (2026-03-09)
-
-- **New: validate-bash.sh** (`hooks/validate-bash.sh`) — PreToolUse hook that blocks dangerous Bash commands
-  - 9-tier defense: system destruction, git force push, git add -A, piped script execution, HTTP exfiltration, credential access, env exfiltration, AWS/IaC destruction, reverse shells
-  - All deny messages include actionable fix suggestions (→ 代替: ...)
-  - Quote-aware: literal strings inside `"..."` and `'...'` are excluded from Tier 1-4, 8-9 checks to prevent false positives (e.g., PR body text mentioning `git push --force`)
-  - Tier 5-7.5 intentionally inspect quoted content (inline code HTTP exfiltration, credential access patterns must be caught even in quotes)
-
-### v2.1.2 (2026-03-09)
-
-- **New: Ghost File Detector Hook** (`hooks/ghost-file-detector.sh`) — PostToolUse hook that detects AI-generated "ghost files"
-  - Catches common anti-pattern: creating `utils2.py` instead of editing `utils.py`
-  - Detects numeric suffixes, `_new`, `_copy`, `_backup`, `_old`, `_v*` patterns
-  - Warning-only (does not block) — the file may be intentional
-  - Reference: AI-generated code creates ghost files in 90-100% of repositories (Harness Engineering Best Practices 2026)
-- **Improved: validate-bash.sh error messages** — all deny messages now include actionable fix suggestions
-  - Example: `git push --force は禁止 → 代替: git push --force-with-lease`
-  - Principle: "Agents can ignore docs but cannot ignore linter errors" — error messages with fix examples guide correct behavior
-
-### v2.1.1 (2026-03-09)
-
-- **New: MCP Response Inspector Hook** (`hooks/mcp-response-inspector.mjs`) — runtime PostToolUse hook for MCP response inspection
-  - Detects: prompt injection, dangerous commands, data exfiltration, suspicious URLs, hidden content (zero-width chars, bidi override)
-  - CRITICAL findings on untrusted MCP → blocks response (exit 2)
-  - Trusted MCP whitelist for false positive reduction
-  - FIDES LOW enforcement at runtime
-
-### v2.1.0 (2026-03-08)
-
-- New detection: API endpoint hijacking (ANTHROPIC_BASE_URL override, proxy injection, DNS/hosts manipulation)
-- New detection: namespace squatting / typosquatting (official prefix abuse, Levenshtein similarity)
-- New detection: Unicode homoglyph & encoding attacks (Cyrillic homoglyphs, bidirectional override, IDN homograph)
-- New detection: context window poisoning (oversized references, repetitive filler, instruction dilution)
-- New Red Team vector: clipboard & output exfiltration chains
-- New Red Team vector: cloud metadata / IMDS access (169.254.169.254, metadata.google.internal)
-- New Red Team vector: symlink & path traversal attacks
-- New Role F: temporal attack analysis (conditional triggers, progressive escalation, delayed payload, state file manipulation)
-- Enhanced Role D: allowlist escape chain analysis (all runtime patterns: python/node/ruby/perl/npm/npx), API endpoint integrity check
-- New CLI analyzers: `namespace_analyzer` (typosquat detection), `size_analyzer` (context poisoning), `temporal_analyzer` (delayed attacks)
-- New YAML rule packs: `api_hijacking`, `cloud_metadata`, `namespace_abuse`
-- Enhanced `obfuscation` rule pack: Unicode homoglyph patterns added
-
-### v2.0.0 (2026-03-07)
-
-- **CLI tool released**: `pip install skill-scanner` — standalone Python package
-- 9 pluggable analyzers: static (YAML+YARA), bytecode, pipeline, behavioral (AST+taint), trigger, LLM judge, meta (FP filtering), VirusTotal, Cisco AI Defense
-- YAML signature rule packs: 10 categories (prompt_injection, data_exfiltration, command_injection, hardcoded_secrets, obfuscation, social_engineering, supply_chain, unauthorized_tool_use, resource_abuse)
-- Multiple output formats: summary, json, markdown, table, sarif (GitHub Code Scanning), html (interactive)
-- Scan policy system: `--policy` presets and custom YAML policies
-- `scan-all` command for batch scanning entire skill directories
-- `interactive` wizard mode for guided scanning
-- `generate-policy` / `configure-policy` for custom rule configuration
-- `--fail-on-findings` / `--fail-on-severity` for CI/CD integration
-
-### v1.2.0 (2026-03-04)
-
-- Added "Before You Run" section with time estimates, confirmation notes, and installation-free guarantee
-- New detection: backdoor persistence patterns (SSH authorized_keys, crontab, cloud IAM, systemd, startup scripts)
-- New detection: privilege escalation via system utilities (GTFOBins/LOLBAS patterns — find -exec, vim escape, tar extraction, SUID abuse, shadow dump)
-- Enhanced Red Team: cross-skill privilege escalation chain analysis, references/ directory scrutiny, step-by-step normalization detection
-- Enhanced Supply Chain: author trust tier classification (A-F), metadata completeness audit, author concentration analysis
-- New Role E: Skill Interconnection Risk — maps recon/exploit/persist chains across skills
-- Enhanced Synthesis: supply chain overview in output, metadata absence as a risk signal
-- Added Credits & Acknowledgments section
-
-### v1.1.0 (2026-03-03)
-
-- New detection: HTTP exfiltration bypass (python -c / node -e inline HTTP patterns)
-- New detection: credential file access patterns (SSH, AWS, GCP, Azure)
-- New detection: reverse shell patterns (Bash, netcat, Python, Ruby, Perl, PowerShell)
-- New Red Team vector: MCP tool poisoning (CVE-2025-6514, CVE-2026-21852)
-- New Red Team vector: settings.json manipulation
-- New Role D: Settings & Hook Audit
-
-### v1.0.0 (2026-03-02)
-
-- Initial release: pattern scanner, red team analyst, deep analyzer
-- 6 detection categories: prompt injection, data exfiltration, dangerous commands, steganography, social engineering, permission bypass
-
----
-
-## Credits & Acknowledgments
-
-This skill was built on lessons learned from auditing 575+ community skills. We are grateful to the following projects and their authors whose work informed our detection patterns:
-
-### Community Skill Authors
-
-- **[zebbern/claude-code-guide](https://github.com/zebbern/claude-code-guide)** — 23 penetration testing and security skills that directly informed our detection categories for credential access, reverse shells, privilege escalation chains, and backdoor persistence. These skills are educational tools for authorized security testing, and their explicit documentation of attack techniques helped us understand what patterns to detect. Thank you for the rapid response to our risk classification request (Issue #11).
-
-- **[raintree-claude-tools](https://github.com/raintreeinc/raintree-claude-tools)** (formerly `anthropic/`) — claude-hook-builder and claude-settings-expert. The settings-expert skill's explicit "bypassPermissions is dangerous" documentation is a model for responsible skill design. The namespace discussion (Issue #492 on anthropics/skills) helped us refine trust boundary abuse detection.
-
-- **[trailofbits/claude-code-devcontainer](https://github.com/trailofbits/claude-code-devcontainer)** — The devcontainer security discussion (Issue #28) about bypassPermissions auto-configuration outside containers was the catalyst for our Permission Bypass detection category.
-
-- **[anthropics/skills](https://github.com/anthropics/skills)** — The official Claude Code skills registry. Our namespace protection discussion (Issue #492) helped shape the Trust Boundary Abuse detection vector.
-
-### Security Research & Tools
-
-- **[carlospolop/PEASS-ng](https://github.com/carlospolop/PEASS-ng)** (LinPEAS/WinPEAS) — Referenced in multiple security skills. The `curl | sh` pattern for linpeas.sh was a key example that informed our piped script execution detection.
-
-- **[GTFOBins](https://gtfobins.github.io/)** — The definitive reference for Unix binary exploitation techniques. Our privilege escalation via system utilities detection (Category 11) is directly informed by GTFOBins patterns.
-
-- **[LOLBAS Project](https://lolbas-project.github.io/)** — Living Off The Land Binaries and Scripts for Windows. Complements GTFOBins for Windows-side detection patterns.
-
-- **[Zenn article: Claude Code/MCP Security Guide](https://zenn.dev/ytksato/articles/057dc7c981d304)** by DPL — Practical security hardening guide that informed our HTTP exfiltration bypass detection and settings.json audit patterns.
-
-### Detection Pattern References
-
-- **MITRE ATT&CK Framework** — Tactics, Techniques, and Procedures (TTPs) referenced in our Red Team analysis vectors, especially T1098 (Account Manipulation), T1059 (Command & Scripting Interpreter), and T1071 (Application Layer Protocol).
-
-- **OWASP** — Prompt injection and indirect prompt injection categories draw from OWASP's LLM Top 10 (2025).
-
-### Special Thanks
-
-Thank you to all community skill authors — including the many whose work we scanned without incident. The Claude Code skill ecosystem grows stronger when we look out for each other. If this tool flags your skill, it is not an accusation; it is an invitation to make the ecosystem safer together.
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ---
 

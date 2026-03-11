@@ -7,7 +7,7 @@
  *
  * FIDES trust_level: LOW（MCP応答は外部データ扱い）
  *
- * @version 1.0.0
+ * @version 1.2.0
  * @author aliksir
  */
 import { readFileSync } from 'fs';
@@ -114,6 +114,43 @@ const PATTERNS = {
       /[\u202E\u202D\u2066-\u2069]/,
       // HTMLコメント内の指示
       /<!--[\s\S]*?(?:ignore|override|system|exec|eval|curl|wget)[\s\S]*?-->/i,
+    ],
+  },
+  // ── 2026年以降の新攻撃手法 ──────────────────────────────────
+  tool_redefinition: {
+    label: 'ツール再定義攻撃',
+    severity: 'HIGH',
+    patterns: [
+      // ツール上書き・シャドウ・インターセプト指示
+      /\b(override|replace|redefine|shadow|intercept)\b.*\btool\b/i,
+      // ツール名/IDの明示的な定義（レスポンス内でのツール登録試行）
+      /\btool[_\s]?(name|id|identifier)\s*[:=]\s*["'][^"']*["']/i,
+      // 既存ツールと同名での再定義
+      /\b(register|define|create)\b.*\b(tool|function)\b.*\b(same|existing|original)\b/i,
+    ],
+  },
+  agent_infection: {
+    label: 'エージェント間感染',
+    severity: 'HIGH',
+    patterns: [
+      // スキル自動インストール指示（距離制限: 30文字以内）
+      /\b(install|add|download)\b.{0,30}\bskill\b/i,
+      // 他環境への展開・複製
+      /\b(propagate|replicate|spread)\b.*\b(to|across|other)\b/i,
+      // エージェントの自動生成
+      /\bspawn\b.*\bagent\b/i,
+    ],
+  },
+  budget_drain: {
+    label: 'API予算枯渇攻撃',
+    severity: 'MEDIUM',
+    patterns: [
+      // 過剰な思考誘発（無限思考ループ、距離制限付き）
+      /\bthink\b.{0,20}\bstep by step\b.{0,30}\b(detail|extreme|every)\b/i,
+      // 全列挙指示
+      /\b(enumerate|list)\b.*\b(all|every)\b.*\bpossible\b/i,
+      // 無限・大量繰り返し指示
+      /\brepeat\b.*\b(\d{3,}|infinite|forever)\b/i,
     ],
   },
 };

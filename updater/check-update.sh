@@ -90,7 +90,7 @@ is_cache_valid() {
     fi
 
     local cached_time
-    cached_time="$(cat "${CACHE_FILE}" 2>/dev/null | head -1 | tr -d '[:space:]')"
+    cached_time="$(head -1 "${CACHE_FILE}" 2>/dev/null | tr -d '[:space:]')"
 
     # タイムスタンプが数値でない場合は無効
     if ! [[ "${cached_time}" =~ ^[0-9]+$ ]]; then
@@ -165,13 +165,16 @@ main() {
     # キャッシュを更新（チェック完了の記録）
     update_cache
 
-    # バージョン比較（文字列比較）
+    # バージョン比較（semver: リモートがローカルより新しい場合のみ通知）
     if [[ "${remote_version}" != "${local_version}" ]]; then
-        # 新バージョンあり → stderrに通知
-        echo "" >&2
-        echo "🔔 Skill Security Check: 新バージョン v${remote_version} が利用可能です（現在: v${local_version}）" >&2
-        echo "   → ${CHANGELOG_WEB_URL}" >&2
-        echo "" >&2
+        local higher
+        higher="$(printf '%s\n%s\n' "${remote_version}" "${local_version}" | sort -t. -k1,1n -k2,2n -k3,3n | tail -1)"
+        if [[ "${higher}" == "${remote_version}" ]]; then
+            echo "" >&2
+            echo "🔔 Skill Security Check: 新バージョン v${remote_version} が利用可能です（現在: v${local_version}）" >&2
+            echo "   → ${CHANGELOG_WEB_URL}" >&2
+            echo "" >&2
+        fi
     fi
 
     exit 0

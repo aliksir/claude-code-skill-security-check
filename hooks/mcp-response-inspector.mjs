@@ -53,7 +53,7 @@ const PATTERNS = {
       /\bOVERRIDE\s+(system|safety|security)/i,
       /\bDISREGARD\s+(all|previous|prior|your)/i,
       /\byou\s+are\s+now\b/i,
-      /\bact\s+as\b.*\b(admin|root|system|unrestricted)/i,
+      /\bact\s+as\b.{0,30}\b(admin|root|system|unrestricted)/i,
       /\bnew\s+instructions?\s*:/i,
       /\bsystem\s*:\s*you\s+are/i,
       /<\/?system>/i,
@@ -83,7 +83,7 @@ const PATTERNS = {
     label: 'データ窃取',
     severity: 'HIGH',
     patterns: [
-      /\bbase64\b.*\b(?:ssh|aws|credentials|\.env|api.?key|secret)/i,
+      /\bbase64\b.{0,50}\b(?:ssh|aws|credentials|\.env|api.?key|secret)/i,
       /\benv\b.*\|\s*(?:curl|wget|python|node)/,
       /\bprintenv\b.*\|\s*(?:curl|wget|python|node)/,
       /(?:cat|type)\s+(?:~\/)?\.(?:ssh|aws|env|gnupg)/,
@@ -122,11 +122,11 @@ const PATTERNS = {
     severity: 'HIGH',
     patterns: [
       // ツール上書き・シャドウ・インターセプト指示
-      /\b(override|replace|redefine|shadow|intercept)\b.*\btool\b/i,
-      // ツール名/IDの明示的な定義（レスポンス内でのツール登録試行）
-      /\btool[_\s]?(name|id|identifier)\s*[:=]\s*["'][^"']*["']/i,
+      /\b(override|replace|redefine|shadow|intercept)\b.{0,30}\btool\b/i,
+      // ツール再登録の指示文脈（通常のJSONフィールド参照を除外するため、命令的動詞と組み合わせ）
+      /\b(set|change|update|register)\b.{0,30}\btool[_\s]?(name|id)\s*[:=]/i,
       // 既存ツールと同名での再定義
-      /\b(register|define|create)\b.*\b(tool|function)\b.*\b(same|existing|original)\b/i,
+      /\b(register|define|create)\b.{0,30}\b(tool|function)\b.{0,30}\b(same|existing|original)\b/i,
     ],
   },
   agent_infection: {
@@ -136,9 +136,9 @@ const PATTERNS = {
       // スキル自動インストール指示（距離制限: 30文字以内）
       /\b(install|add|download)\b.{0,30}\bskill\b/i,
       // 他環境への展開・複製
-      /\b(propagate|replicate|spread)\b.*\b(to|across|other)\b/i,
+      /\b(propagate|replicate|spread)\b.{0,30}\b(to|across|other)\b/i,
       // エージェントの自動生成
-      /\bspawn\b.*\bagent\b/i,
+      /\bspawn\b.{0,30}\bagent\b/i,
     ],
   },
   budget_drain: {
@@ -148,9 +148,9 @@ const PATTERNS = {
       // 過剰な思考誘発（無限思考ループ、距離制限付き）
       /\bthink\b.{0,20}\bstep by step\b.{0,30}\b(detail|extreme|every)\b/i,
       // 全列挙指示
-      /\b(enumerate|list)\b.*\b(all|every)\b.*\bpossible\b/i,
+      /\b(enumerate|list)\b.{0,20}\b(all|every)\b.{0,20}\bpossible\b/i,
       // 無限・大量繰り返し指示
-      /\brepeat\b.*\b(\d{3,}|infinite|forever)\b/i,
+      /\brepeat\b.{0,30}\b(\d{3,}|infinite|forever)\b/i,
     ],
   },
 };

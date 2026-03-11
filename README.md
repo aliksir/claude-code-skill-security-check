@@ -100,7 +100,7 @@ Three hooks integrate with Claude Code's hook system to block threats at runtime
 |------|-------------|
 | `mcp-response-inspector.mjs` | Inspects MCP tool responses for embedded prompt injection and exfiltration payloads before they reach the agent |
 | `validate-bash.sh` | Intercepts Bash commands and blocks patterns matching `curl \| bash`, `rm -rf /`, `bypassPermissions`, and other Tier 1 dangerous operations |
-| `ghost-file-detector.sh` | Detects files written by AI agents that were never shown to the user — a common persistence technique |
+| `ghost-file-detector.sh` | Detects AI-generated "ghost files" — similarly-named copies (e.g., `utils2.py`) created instead of editing the original, a common AI coding anti-pattern |
 
 ---
 

@@ -4,7 +4,7 @@ All notable changes to `skill-security-check` are documented here.
 
 ---
 
-### v2.2.0 (2026-03-11)
+## v2.2.0 (2026-03-11)
 
 - New detection: XOR/dynamic encoding obfuscation (ClawHavoc campaign patterns)
 - New detection: agent-to-agent infection & lateral movement (P2P skill propagation)
@@ -21,7 +21,7 @@ All notable changes to `skill-security-check` are documented here.
 - Added root README.md with disclaimer
 - Updated mcp-response-inspector.mjs (v1.2.0): added tool_redefinition, agent_infection, budget_drain detection
 
-### v2.1.3 (2026-03-09)
+## v2.1.3 (2026-03-09)
 
 - **New: validate-bash.sh** (`hooks/validate-bash.sh`) — PreToolUse hook that blocks dangerous Bash commands
   - 9-tier defense: system destruction, git force push, git add -A, piped script execution, HTTP exfiltration, credential access, env exfiltration, AWS/IaC destruction, reverse shells
@@ -29,7 +29,7 @@ All notable changes to `skill-security-check` are documented here.
   - Quote-aware: literal strings inside `"..."` and `'...'` are excluded from Tier 1-4, 8-9 checks to prevent false positives (e.g., PR body text mentioning `git push --force`)
   - Tier 5-7.5 intentionally inspect quoted content (inline code HTTP exfiltration, credential access patterns must be caught even in quotes)
 
-### v2.1.2 (2026-03-09)
+## v2.1.2 (2026-03-09)
 
 - **New: Ghost File Detector Hook** (`hooks/ghost-file-detector.sh`) — PostToolUse hook that detects AI-generated "ghost files"
   - Catches common anti-pattern: creating `utils2.py` instead of editing `utils.py`
@@ -40,7 +40,7 @@ All notable changes to `skill-security-check` are documented here.
   - Example: `git push --force は禁止 → 代替: git push --force-with-lease`
   - Principle: "Agents can ignore docs but cannot ignore linter errors" — error messages with fix examples guide correct behavior
 
-### v2.1.1 (2026-03-09)
+## v2.1.1 (2026-03-09)
 
 - **New: MCP Response Inspector Hook** (`hooks/mcp-response-inspector.mjs`) — runtime PostToolUse hook for MCP response inspection
   - Detects: prompt injection, dangerous commands, data exfiltration, suspicious URLs, hidden content (zero-width chars, bidi override)
@@ -48,7 +48,7 @@ All notable changes to `skill-security-check` are documented here.
   - Trusted MCP whitelist for false positive reduction
   - FIDES LOW enforcement at runtime
 
-### v2.1.0 (2026-03-08)
+## v2.1.0 (2026-03-08)
 
 - New detection: API endpoint hijacking (ANTHROPIC_BASE_URL override, proxy injection, DNS/hosts manipulation)
 - New detection: namespace squatting / typosquatting (official prefix abuse, Levenshtein similarity)
@@ -63,7 +63,7 @@ All notable changes to `skill-security-check` are documented here.
 - New YAML rule packs: `api_hijacking`, `cloud_metadata`, `namespace_abuse`
 - Enhanced `obfuscation` rule pack: Unicode homoglyph patterns added
 
-### v2.0.0 (2026-03-07)
+## v2.0.0 (2026-03-07)
 
 - **CLI tool released**: `pip install skill-scanner` — standalone Python package
 - 9 pluggable analyzers: static (YAML+YARA), bytecode, pipeline, behavioral (AST+taint), trigger, LLM judge, meta (FP filtering), VirusTotal, Cisco AI Defense
@@ -75,7 +75,7 @@ All notable changes to `skill-security-check` are documented here.
 - `generate-policy` / `configure-policy` for custom rule configuration
 - `--fail-on-findings` / `--fail-on-severity` for CI/CD integration
 
-### v1.2.0 (2026-03-04)
+## v1.2.0 (2026-03-04)
 
 - Added "Before You Run" section with time estimates, confirmation notes, and installation-free guarantee
 - New detection: backdoor persistence patterns (SSH authorized_keys, crontab, cloud IAM, systemd, startup scripts)
@@ -86,7 +86,7 @@ All notable changes to `skill-security-check` are documented here.
 - Enhanced Synthesis: supply chain overview in output, metadata absence as a risk signal
 - Added Credits & Acknowledgments section
 
-### v1.1.0 (2026-03-03)
+## v1.1.0 (2026-03-03)
 
 - New detection: HTTP exfiltration bypass (python -c / node -e inline HTTP patterns)
 - New detection: credential file access patterns (SSH, AWS, GCP, Azure)
@@ -95,7 +95,7 @@ All notable changes to `skill-security-check` are documented here.
 - New Red Team vector: settings.json manipulation
 - New Role D: Settings & Hook Audit
 
-### v1.0.0 (2026-03-02)
+## v1.0.0 (2026-03-02)
 
 - Initial release: pattern scanner, red team analyst, deep analyzer
 - 6 detection categories: prompt injection, data exfiltration, dangerous commands, steganography, social engineering, permission bypass

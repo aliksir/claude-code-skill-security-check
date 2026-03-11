@@ -17,6 +17,9 @@ This hook provides a runtime defense layer that static analysis alone cannot cov
 | Data Exfiltration | HIGH | `env \| curl`, credential file access, API key extraction |
 | Suspicious URLs | MEDIUM | HTTP POST to unknown domains, reverse shell patterns |
 | Hidden Content | HIGH | Zero-width characters, bidirectional override, HTML comment injection |
+| Tool Redefinition | HIGH | `override tool`, `shadow tool`, same-name tool registration in response |
+| Agent Infection | HIGH | `install skill`, `propagate to other`, `spawn agent` directives |
+| Budget Drain | MEDIUM | `think step by step in extreme detail`, `repeat 999 times`, `enumerate all possible` |
 
 ## Install
 

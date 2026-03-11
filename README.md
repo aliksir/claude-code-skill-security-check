@@ -45,6 +45,22 @@ skill-scanner scan-all ~/.claude/skills/ --format markdown -o report.md
 
 ---
 
+## Update Checker
+
+Check for new versions of Skill Security Check:
+
+```bash
+# Manual check (uses 24-hour cache)
+bash updater/check-update.sh
+
+# Force immediate check
+bash updater/check-update.sh --force
+```
+
+You can also enable automatic checks at Claude Code session start via a SessionStart hook. See [updater/README.md](updater/README.md) for installation instructions.
+
+---
+
 ## Project Structure
 
 ```
@@ -55,6 +71,9 @@ skill-scanner scan-all ~/.claude/skills/ --format markdown -o report.md
 │   ├── mcp-response-inspector.mjs   # Runtime MCP response inspection
 │   ├── validate-bash.sh             # Dangerous command prevention
 │   └── ghost-file-detector.sh       # AI ghost file detection
+├── updater/
+│   ├── README.md                    # Update checker setup guide
+│   └── check-update.sh              # Version check script (manual or SessionStart hook)
 └── iam-policy-template/
     ├── README.md                    # IAM policy usage guide
     ├── claude-code-readonly.json    # Read-only AWS policy

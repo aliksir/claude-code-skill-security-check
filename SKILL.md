@@ -3,7 +3,7 @@ name: skill-security-check
 description: "Security audit for Claude Code community skills. Scans SKILL.md, references/, and scripts/ for prompt injection, data exfiltration, permission bypass, dangerous commands, supply chain risks, backdoor persistence, API endpoint hijacking, namespace squatting, Unicode homoglyph attacks, context window poisoning, and temporal attack patterns. Can be used as a Claude Code skill (agent-based) or as a standalone CLI tool (skill-scanner). Use: /skill-security-check"
 metadata:
   author: aliks
-  version: "2.2.0"
+  version: "2.3.0"
 risk: low
 source: community
 ---

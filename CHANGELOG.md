@@ -4,6 +4,20 @@ All notable changes to `skill-security-check` are documented here.
 
 ---
 
+## v2.3.0 (2026-03-13)
+
+- **New: Semgrep custom rules** (`semgrep-rules/`) — 7 rules for `/security-review` code change analysis
+  - `angular-dom-xss.yml`: Angular `bypassSecurityTrustHtml/Script/Style/Url/ResourceUrl()` detection (CWE-79)
+  - `path-traversal.yml`: Zip Slip via `path.resolve()` + string concat, `fs.write*` with path concat, `path.join()` with untrusted variable (CWE-22)
+  - `idor-auth-check.yml`: Express routes with auth middleware but no ownership check, `findById(req.params)` without owner filter (CWE-639)
+- **Enhanced: `/security-review` workflow** — Added Step 2.5 (AI reasoning phase) for data flow analysis
+  - Entry point identification (2-hop limit from changed code)
+  - Authentication/authorization check (IDOR prevention)
+  - Data flow tracing (input → validation → processing → output)
+  - Structured output table in Step 4 report
+- Semgrep standard + custom rules run in single invocation (`--config auto --config ~/.claude/semgrep-rules/`)
+- Inspired by GitHub Security Lab's Taskflow Agent findings on OWASP Juice Shop
+
 ## v2.2.0 (2026-03-11)
 
 - New detection: XOR/dynamic encoding obfuscation (ClawHavoc campaign patterns)

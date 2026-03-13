@@ -1,0 +1,45 @@
+rules:
+  - id: express-route-no-ownership-check
+    patterns:
+      - pattern: |
+          $APP.$METHOD($PATH, $AUTH, (req, res) => {
+            ...
+            $MODEL.findById(req.params.$ID)
+            ...
+          })
+      - pattern-not: |
+          $APP.$METHOD($PATH, $AUTH, (req, res) => {
+            ...
+            $MODEL.findById(req.params.$ID)
+            ...
+            req.user.$FIELD
+            ...
+          })
+    message: >
+      Route with authentication middleware accesses a resource by ID from request
+      parameters, but does not appear to verify ownership (no req.user field check).
+      This may be an IDOR vulnerability (CWE-639). Ensure the authenticated user
+      owns or has permission to access the requested resource.
+    languages: [javascript, typescript]
+    severity: INFO
+    metadata:
+      cwe:
+        - "CWE-639: Authorization Bypass Through User-Controlled Key"
+      owasp:
+        - "A01:2021 - Broken Access Control"
+      category: security
+
+  - id: db-find-by-request-param-no-owner-check
+    pattern: $MODEL.findById(req.params.$PARAM)
+    message: >
+      Database query uses request parameter directly to look up a resource.
+      If the route is behind authentication, verify the authenticated user has
+      permission to access this resource. Add an ownership filter to the query.
+    languages: [javascript, typescript]
+    severity: INFO
+    metadata:
+      cwe:
+        - "CWE-639: Authorization Bypass Through User-Controlled Key"
+      owasp:
+        - "A01:2021 - Broken Access Control"
+      category: security

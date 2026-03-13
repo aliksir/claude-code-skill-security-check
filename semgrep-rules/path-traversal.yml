@@ -1,0 +1,46 @@
+rules:
+  - id: zip-slip-path-resolve-concat
+    patterns:
+      - pattern: path.resolve($BASE, ... + $ENTRY + ...)
+    message: >
+      path.resolve() with string concatenation using a potentially user-controlled
+      filename may allow Zip Slip / path traversal (CWE-22).
+      Validate that the resolved path starts with the intended base directory.
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"
+      category: security
+      references:
+        - https://snyk.io/research/zip-slip-vulnerability
+
+  - id: fs-write-with-user-input-concat
+    pattern-either:
+      - pattern: fs.writeFileSync($PATH + ..., ...)
+      - pattern: fs.writeFile($PATH + ..., ...)
+      - pattern: fs.createWriteStream($PATH + ...)
+    message: >
+      File write operation with string concatenation in the path.
+      If any part of the path comes from user input, this may allow path traversal.
+      Use path.resolve() and validate the result stays within the intended directory.
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"
+      category: security
+
+  - id: path-join-dotdot-no-check
+    patterns:
+      - pattern: path.join(..., $VAR, ...)
+      - pattern-not: path.join("...", "...")
+    message: >
+      path.join() with a variable that may contain ".." components.
+      Consider validating the resulting path stays within the expected directory.
+    languages: [javascript, typescript]
+    severity: INFO
+    metadata:
+      cwe:
+        - "CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')"
+      category: security

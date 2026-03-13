@@ -1,6 +1,6 @@
 # Skill Security Check
 
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg) ![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg) ![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
 
 A comprehensive security audit tool for Claude Code community skills. Combines a multi-agent skill mode (no installation required) with a standalone CLI tool (`skill-scanner`) to detect malicious patterns, supply-chain risks, and runtime threats in `.md` skill files.
 
@@ -22,6 +22,7 @@ A comprehensive security audit tool for Claude Code community skills. Combines a
 - **3 parallel scanning agents** — Pattern Scanner, Red Team Analyst, and Deep Analyzer run concurrently for faster, more thorough coverage
 - **Runtime defense hooks** — MCP response inspector, Bash command validator, and ghost file detector protect against live threats
 - **AWS IAM policy templates** — least-privilege templates for read-only and dev/deploy Claude Code environments
+- **Semgrep custom rules** — 7 rules for Angular DOM XSS, path traversal/Zip Slip, and IDOR detection in code reviews
 - **CLI tool** (`skill-scanner`) — YAML/YARA rule engine, AST-level analysis, optional LLM and VirusTotal integration
 
 ---
@@ -71,6 +72,10 @@ You can also enable automatic checks at Claude Code session start via a SessionS
 │   ├── mcp-response-inspector.mjs   # Runtime MCP response inspection
 │   ├── validate-bash.sh             # Dangerous command prevention
 │   └── ghost-file-detector.sh       # AI ghost file detection
+├── semgrep-rules/
+│   ├── angular-dom-xss.yml          # Angular bypassSecurityTrust* detection
+│   ├── path-traversal.yml           # Zip Slip / path traversal patterns
+│   └── idor-auth-check.yml          # IDOR preliminary detection
 ├── updater/
 │   ├── README.md                    # Update checker setup guide
 │   └── check-update.sh              # Version check script (manual or SessionStart hook)

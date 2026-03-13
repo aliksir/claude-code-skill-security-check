@@ -1,0 +1,39 @@
+rules:
+  - id: angular-bypass-security-trust-html
+    pattern: $S.bypassSecurityTrustHtml(...)
+    message: >
+      bypassSecurityTrustHtml() bypasses Angular's built-in XSS sanitization.
+      Ensure the input is properly sanitized before passing to this method.
+      If the input comes from user-controlled data, this is a DOM XSS vulnerability.
+    languages: [typescript, javascript]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')"
+      owasp:
+        - A07:2017 - Cross-Site Scripting (XSS)
+      references:
+        - https://angular.io/api/platform-browser/DomSanitizer
+      category: security
+      technology:
+        - angular
+
+  - id: angular-bypass-security-trust-any
+    pattern-either:
+      - pattern: $S.bypassSecurityTrustScript(...)
+      - pattern: $S.bypassSecurityTrustStyle(...)
+      - pattern: $S.bypassSecurityTrustUrl(...)
+      - pattern: $S.bypassSecurityTrustResourceUrl(...)
+    message: >
+      bypassSecurityTrust*() bypasses Angular's built-in sanitization.
+      Review whether this bypass is strictly necessary and ensure input is validated.
+    languages: [typescript, javascript]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')"
+      owasp:
+        - "A07:2017 - Cross-Site Scripting (XSS)"
+      category: security
+      technology:
+        - angular

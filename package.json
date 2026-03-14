@@ -1,0 +1,27 @@
+{
+  "name": "claude-code-skill-security-check",
+  "version": "2.3.0",
+  "description": "One-command installer for Claude Code skill security audit — SKILL.md, hooks, semgrep rules, IAM templates, and updater",
+  "bin": {
+    "claude-code-skill-security-check": "./bin/install.js"
+  },
+  "keywords": [
+    "claude-code",
+    "security",
+    "skills",
+    "audit",
+    "mcp",
+    "hooks",
+    "semgrep"
+  ],
+  "author": "aliks",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aliksir/claude-code-skill-security-check"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

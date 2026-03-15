@@ -115,7 +115,7 @@ if echo "$command" | grep -qiE '\b(env|printenv|set)\b.*\|\s*(curl|wget|python3?
 fi
 
 # === Tier 7.5: セキュリティスキャン結果の外部送信防止 ===
-if echo "$command" | grep -qiE '\b(curl|wget)\b.*(-F|--data-binary|--upload-file|-d\s|--data\s).*\b(report|scan-result|gitleaks|trivy|semgrep|bandit|osv-scanner|sarif|\.json)\b'; then
+if echo "$command" | grep -qiE '\b(curl|wget)\b.*(-F|--data-binary|--upload-file|-d\s|--data\s).*\b(report|scan-result|gitleaks|betterleaks|trivy|semgrep|bandit|osv-scanner|sarif|\.json)\b'; then
   deny "セキュリティスキャン結果の外部送信は禁止です"
 fi
 

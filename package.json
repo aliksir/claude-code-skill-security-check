@@ -1,8 +1,8 @@
 {
   "name": "claude-code-skill-security-check",
-  "version": "2.4.3",
+  "version": "2.4.4",
   "description": "One-command installer for Claude Code skill security audit — SKILL.md, hooks, semgrep rules, IAM templates, and updater",
-  "bin": "bin/cli.js",
+  "bin": "cli.js",
   "keywords": [
     "claude-code",
     "security",

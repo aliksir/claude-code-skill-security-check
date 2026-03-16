@@ -1,6 +1,6 @@
 # Skill Security Check
 
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg) ![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg) ![Version](https://img.shields.io/badge/version-2.4.5-blue.svg) ![npm](https://img.shields.io/npm/v/claude-code-skill-security-check)
 
 A comprehensive security audit tool for Claude Code community skills. Combines a multi-agent skill mode (no installation required) with a standalone CLI tool (`skill-scanner`) to detect malicious patterns, supply-chain risks, and runtime threats in `.md` skill files.
 
@@ -18,16 +18,26 @@ A comprehensive security audit tool for Claude Code community skills. Combines a
 
 ## Features
 
-- **22 detection categories** — prompt injection, data exfiltration, credential access, reverse shell, privilege escalation, and more
+- **26 detection categories** — prompt injection, data exfiltration, credential access, reverse shell, privilege escalation, tool override, memory injection, agent self-replication, MCP elicitation abuse, and more
 - **3 parallel scanning agents** — Pattern Scanner, Red Team Analyst, and Deep Analyzer run concurrently for faster, more thorough coverage
-- **Runtime defense hooks** — MCP response inspector, Bash command validator, and ghost file detector protect against live threats
+- **Plugin manifest inspection** — `.claude-plugin/plugin.json` scanning for name impersonation, excessive permissions, undeclared hooks
+- **allowed-tools audit** — flags skills with unrestricted tool access (missing `allowed-tools` frontmatter)
+- **Runtime defense hooks** — MCP response inspector (with elicitation abuse detection), Bash command validator, and ghost file detector
+- **7 Semgrep custom rules** — SSRF, SQL injection, weak crypto, insecure deserialization, Angular DOM XSS, path traversal, IDOR
 - **AWS IAM policy templates** — least-privilege templates for read-only and dev/deploy Claude Code environments
-- **Semgrep custom rules** — 7 rules for Angular DOM XSS, path traversal/Zip Slip, and IDOR detection in code reviews
 - **CLI tool** (`skill-scanner`) — YAML/YARA rule engine, AST-level analysis, optional LLM and VirusTotal integration
 
 ---
 
 ## Quick Start
+
+### One-command installer (npm)
+
+```bash
+npx claude-code-skill-security-check
+```
+
+Installs SKILL.md, hooks, semgrep rules, IAM templates, and updater into your Claude Code environment.
 
 ### Skill Mode (no installation)
 
@@ -74,8 +84,12 @@ You can also enable automatic checks at Claude Code session start via a SessionS
 │   └── ghost-file-detector.sh       # AI ghost file detection
 ├── semgrep-rules/
 │   ├── angular-dom-xss.yml          # Angular bypassSecurityTrust* detection
+│   ├── idor-auth-check.yml          # IDOR preliminary detection
+│   ├── insecure-deserialization.yml  # pickle, yaml.load, Marshal, unserialize
 │   ├── path-traversal.yml           # Zip Slip / path traversal patterns
-│   └── idor-auth-check.yml          # IDOR preliminary detection
+│   ├── sql-injection.yml            # ORM bypass (Django, SQLAlchemy, Sequelize, Prisma)
+│   ├── ssrf.yml                     # Server-Side Request Forgery
+│   └── weak-crypto.yml              # MD5, SHA1, DES, Math.random() for security
 ├── updater/
 │   ├── README.md                    # Update checker setup guide
 │   └── check-update.sh              # Version check script (manual or SessionStart hook)
@@ -113,6 +127,10 @@ You can also enable automatic checks at Claude Code session start via a SessionS
 | 20 | API Budget Drain | MEDIUM |
 | 21 | Auto Mode Abuse | MEDIUM-HIGH |
 | 22 | Multi-turn Grooming | HIGH |
+| 23 | Tool Override / Shadow | HIGH |
+| 24 | Whiteboard / Memory Injection | HIGH |
+| 25 | Agent Spawn & Self-Replication | CRITICAL |
+| 26 | MCP Elicitation Abuse | MEDIUM-HIGH |
 
 ---
 
@@ -122,7 +140,7 @@ Three hooks integrate with Claude Code's hook system to block threats at runtime
 
 | Hook | Description |
 |------|-------------|
-| `mcp-response-inspector.mjs` | Inspects MCP tool responses for embedded prompt injection and exfiltration payloads before they reach the agent |
+| `mcp-response-inspector.mjs` | Inspects MCP tool responses for embedded prompt injection, exfiltration payloads, and elicitation abuse before they reach the agent |
 | `validate-bash.sh` | Intercepts Bash commands and blocks patterns matching `curl \| bash`, `rm -rf /`, `bypassPermissions`, and other Tier 1 dangerous operations |
 | `ghost-file-detector.sh` | Detects AI-generated "ghost files" — similarly-named copies (e.g., `utils2.py`) created instead of editing the original, a common AI coding anti-pattern |
 

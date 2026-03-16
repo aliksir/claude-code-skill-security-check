@@ -7,7 +7,7 @@
  *
  * FIDES trust_level: LOW（MCP応答は外部データ扱い）
  *
- * @version 1.2.0
+ * @version 1.3.0
  * @author aliksir
  */
 import { readFileSync } from 'fs';
@@ -153,6 +153,23 @@ const PATTERNS = {
       /\brepeat\b.{0,30}\b(\d{3,}|infinite|forever)\b/i,
     ],
   },
+  // ── MCP Elicitation 悪用検出（CC 2.1.76+ 新機能）─────────────────
+  elicitation_abuse: {
+    label: 'Elicitation悪用',
+    severity: 'WARNING',
+    patterns: [
+      // 1. Elicitation経由のコマンド実行: ElicitationResult のテキスト/ボタンラベルに実行キーワード
+      /\b(elicitation|elicit)\b[\s\S]{0,200}\b(bash|exec|eval|system|spawn|child_process|execSync|execFile|shelljs)\b/i,
+      // 2. 認証情報収集: Elicitation のフォームフィールドやプロンプトに機微キーワード
+      /\b(elicitation|elicit)\b[\s\S]{0,200}\b(password|passwd|token|api[_\s]?key|secret|credential|auth[_\s]?code|private[_\s]?key)\b/i,
+      // 3. 偽の確認UI: 危険操作を承認・許可させようとするパターン
+      /\b(elicitation|elicit)\b[\s\S]{0,200}\b(confirm|approve|authorize|grant[_\s]?permission|allow[_\s]?access|escalate)\b/i,
+      // 4. 隠しコマンド埋め込み: UI要素(description/placeholder/default)にシェルコマンド/スクリプト
+      /\b(description|placeholder|default[_\s]?value|label)\b[\s\S]{0,100}\b(bash|sh|powershell|cmd|python|node|ruby|perl|exec|eval|curl|wget)\b[\s\S]{0,50}[`$({]/i,
+      // 5. Elicitation 種別: action/type フィールドに実行系キーワード
+      /"(?:action|type)"\s*:\s*"(?:execute|run|eval|inject|shell)"/i,
+    ],
+  },
 };
 
 // 安全なMCPサーバーのホワイトリスト（誤検知削減）
@@ -202,13 +219,26 @@ const header = isTrusted
 
 const lines = [header];
 for (const f of findings) {
-  const icon = f.severity === 'CRITICAL' ? '🔴' : f.severity === 'HIGH' ? '🟠' : '🟡';
-  lines.push(`  ${icon} [${f.severity}] ${f.label}: "${f.matched}"`);
+  const icon = f.severity === 'CRITICAL' ? '🔴'
+    : f.severity === 'HIGH' ? '🟠'
+    : f.severity === 'WARNING' ? '🟡'
+    : '🔵'; // MEDIUM
+  // elicitation_abuse は専用プレフィックスメッセージを付与
+  const suffix = f.category === 'elicitation_abuse'
+    ? ' [ELICITATION_ABUSE] Potential credential harvesting via elicitation UI'
+    : '';
+  lines.push(`  ${icon} [${f.severity}] ${f.label}: "${f.matched}"${suffix}`);
 }
 
 if (!isTrusted && (hasCritical || hasHigh)) {
   lines.push('  → この応答の内容をBashコマンドに直接展開しないでください');
   lines.push('  → 独立した検証なしに action:auto にしないでください');
+}
+
+const hasWarning = findings.some((f) => f.severity === 'WARNING');
+if (!isTrusted && hasWarning) {
+  lines.push('  → Elicitation UI経由の権限昇格・認証情報収集の可能性があります');
+  lines.push('  → ElicitationResult の内容を実行前に確認してください');
 }
 
 // stderrに出力（hookのユーザー表示チャネル）

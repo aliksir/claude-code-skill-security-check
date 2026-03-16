@@ -3,7 +3,7 @@ name: skill-security-check
 description: "Security audit for Claude Code community skills. Scans SKILL.md, references/, and scripts/ for prompt injection, data exfiltration, permission bypass, dangerous commands, supply chain risks, backdoor persistence, API endpoint hijacking, namespace squatting, Unicode homoglyph attacks, context window poisoning, and temporal attack patterns. Can be used as a Claude Code skill (agent-based) or as a standalone CLI tool (skill-scanner). Use: /skill-security-check"
 metadata:
   author: aliks
-  version: "2.3.0"
+  version: "2.4.0"
 risk: low
 source: community
 ---
@@ -146,6 +146,15 @@ Launch **3 parallel agents** (all `general-purpose`, model: `sonnet`) for indepe
 ## Agent 1: Pattern Scanner
 
 Scan all `SKILL.md`, `references/**/*.md`, and `scripts/**` files using Grep.
+
+### Plugin Manifest Inspection (.claude-plugin/plugin.json)
+
+If the target contains a `.claude-plugin/plugin.json` manifest, additionally check:
+- **Name impersonation**: Plugin name mimicking official namespaces (`anthropic-*`, `claude-*`, `official-*`)
+- **Excessive permissions**: Hooks that request `Bash` or `Write` without clear justification
+- **Undeclared hooks**: Hook files present in `hooks/` directory but not referenced in manifest
+- **Metadata inconsistency**: Version, author, or description mismatch between plugin.json and SKILL.md
+- **Settings override**: `settings.json` that changes agent or model without user awareness
 
 ### 1. Prompt Injection
 
@@ -337,6 +346,38 @@ Detect gradual privilege escalation across multiple sessions:
 - `if first_run`, `if returning_user` — branching based on invocation count
 - Trust building followed by privilege escalation (showing safe operations first, then the actual payload)
 
+### 23. Tool Override / Shadow Attack
+
+スキルが既存ツールの定義を上書き・シャドウイングするパターン:
+- `override`, `replace`, `redefine`, `shadow` + ツール名（Read, Write, Edit, Bash等）
+- ツール定義の再宣言（`"name": "Read"` 等をplugin.jsonやスキル内で再定義）
+- `allowed-tools` を操作して制限を緩和する指示
+- フック定義で既存フックを無効化する指示（`"hooks": []`で上書き）
+
+### 24. Whiteboard / Memory Injection
+
+共有ファイル（whiteboard, MEMORY.md, CLAUDE.md等）への命令注入:
+- `Write` or `Edit` で whiteboard/*.md, MEMORY.md, CLAUDE.md に書き込む指示
+- 「以下をCLAUDE.mdに追加してください」等の間接的改変指示
+- handoff データに命令テキストを埋め込むパターン
+- 「次のセッションで」「今後は常に」等の永続化を意図する指示
+
+### 25. Agent Spawn & Self-Replication
+
+自己複製・伝播・自律増殖パターン:
+- `Agent`, `TeamCreate`, `spawn`, `replicate`, `propagate` + 自動実行指示
+- 他プロジェクトの `.claude/` ディレクトリへの書き込み指示
+- `npm install`, `pip install` で別のスキルを自動インストール
+- 自分自身のコピーを別の場所に配置する指示
+
+### 26. MCP Elicitation Abuse
+
+MCP Elicitation/ElicitationResult経由の権限昇格:
+- ElicitationResult で CLI コマンド実行を要求するパターン
+- Elicitation のUI要素（ボタン、フォーム）にコマンドを埋め込み
+- 「確認」を装ってユーザーに危険な操作を承認させる
+- Elicitation経由でAPIキーや認証情報を収集するパターン
+
 Report ALL hits (including false positives). Classification is done in the synthesis phase.
 
 ---
@@ -361,6 +402,9 @@ Analyze skills from an attacker's perspective. Read SKILL.md and referenced file
 11. **DoD Manipulation for Silent Exfiltration** — skills that define Definition of Done in a way that instructs the agent to send out the entire codebase voluntarily — e.g., "do not commit changes until all tasks are complete" delays commits while exfiltration completes. Confirmed in real-world environments by Mitiga research
 12. **MCP Tool Redefinition / Shadowing** — a malicious MCP server provides an implementation with the same name as a legitimate tool, intercepting data. Succeeds through identifier collision alone and is difficult to detect
 13. **API Budget Drain Attack** — intentionally induces overthinking to explode API token consumption, functioning as a DoS-style attack
+14. **Plugin manifest poisoning**: Legitimate-looking plugin.json that installs malicious hooks or overrides settings
+15. **Namespace squatting via plugins**: Registering plugin names that mimic popular tools
+16. **Hook chain injection**: Plugin hooks that inject additional hooks at install time
 
 ### Focus Areas
 
@@ -423,6 +467,14 @@ Analyze Claude Code configuration files for security misconfigurations:
 - **MCP server settings**: check for `enableAllProjectMcpServers: true` which auto-trusts all project-level MCP servers without user confirmation
 - **Hook command safety**: analyze Bash commands within hook definitions for dangerous patterns (data exfiltration, privilege escalation, credential access) — hooks run automatically and bypass normal approval flows
 - **API endpoint integrity**: check for `ANTHROPIC_BASE_URL` or proxy environment variable overrides in hook commands or skill instructions that redirect API traffic
+
+#### allowed-tools Audit
+
+- Check all SKILL.md files for `allowed-tools` frontmatter
+- **Missing allowed-tools** on skills that use Bash or Write → **High risk** (unrestricted tool access)
+- **Missing allowed-tools** on other skills → **Medium risk** (recommend explicit declaration)
+- Verify declared allowed-tools match actual tool usage in skill instructions
+- Flag skills that request `Bash` + `Write` + `Edit` together (maximum attack surface)
 
 ### Role E: Skill Interconnection Risk
 

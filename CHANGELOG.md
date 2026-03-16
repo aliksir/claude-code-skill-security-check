@@ -4,6 +4,23 @@ All notable changes to `skill-security-check` are documented here.
 
 ---
 
+## v2.4.0 (2026-03-16)
+
+- **New: 4 Semgrep custom rules** (3 → 7 total)
+  - `ssrf.yml`: Server-Side Request Forgery — fetch/axios/requests/urllib with user input, Express open redirect (CWE-918)
+  - `sql-injection.yml`: SQL Injection via ORM bypass — Django raw()/extra(), SQLAlchemy text(), Sequelize query(), Prisma $queryRaw (CWE-89)
+  - `weak-crypto.yml`: Weak cryptographic algorithms — MD5, SHA1, DES, RC4, Math.random() for security (CWE-327/328/330)
+  - `insecure-deserialization.yml`: Insecure deserialization — pickle, yaml.load, Marshal, unserialize, eval(JSON.stringify) (CWE-502)
+- **New: 4 detection patterns** (#23-#26)
+  - #23: Tool Override / Shadow Attack — skill overriding existing tool definitions
+  - #24: Whiteboard / Memory Injection — injecting commands into shared files (CLAUDE.md, MEMORY.md, whiteboard)
+  - #25: Agent Spawn & Self-Replication — autonomous agent creation and propagation
+  - #26: MCP Elicitation Abuse — credential harvesting and privilege escalation via Elicitation UI
+- **New: Plugin manifest inspection** — `.claude-plugin/plugin.json` scanning for name impersonation, excessive permissions, undeclared hooks, metadata inconsistency
+- **Enhanced: Role D** — `allowed-tools` audit for SKILL.md frontmatter (missing = Medium/High risk)
+- **Enhanced: Red Team** — plugin manifest poisoning, namespace squatting via plugins, hook chain injection vectors
+- **Enhanced: mcp-response-inspector.mjs** (v1.3.0) — Elicitation abuse detection (5 patterns, WARNING severity)
+
 ## v2.3.0 (2026-03-13)
 
 - **New: Semgrep custom rules** (`semgrep-rules/`) — 7 rules for `/security-review` code change analysis

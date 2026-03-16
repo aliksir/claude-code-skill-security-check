@@ -1,0 +1,120 @@
+rules:
+  - id: django-raw-sql-string-format
+    pattern-either:
+      - pattern: $MODEL.objects.raw($QUERY % ...)
+      - pattern: $MODEL.objects.raw($QUERY.format(...))
+      - pattern: $MODEL.objects.raw(f"...")
+      - pattern: $MODEL.objects.raw("..." + $VAR + "...")
+      - pattern: $MODEL.objects.raw("..." + $VAR)
+    message: >
+      Django raw() is called with a dynamically constructed SQL string.
+      String formatting or concatenation in SQL queries allows SQL injection (CWE-89).
+      Use parameterized queries: Model.objects.raw(sql, [param1, param2]).
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe:
+        - "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+      owasp:
+        - "A03:2021 - Injection"
+      category: security
+
+  - id: django-extra-sql-string-format
+    pattern-either:
+      - pattern: $QUERYSET.extra(where=[$QUERY % ...])
+      - pattern: $QUERYSET.extra(where=[$QUERY.format(...)])
+      - pattern: $QUERYSET.extra(where=[f"..."])
+      - pattern: $QUERYSET.extra(tables=[$QUERY % ...])
+      - pattern: $QUERYSET.extra(tables=[f"..."])
+    message: >
+      Django extra() is called with a dynamically constructed SQL string.
+      String formatting in extra() allows SQL injection (CWE-89).
+      Use parameterized queries with the params argument, or switch to annotate()/filter().
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe:
+        - "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+      owasp:
+        - "A03:2021 - Injection"
+      category: security
+
+  - id: sqlalchemy-text-string-format
+    pattern-either:
+      - pattern: text($QUERY % ...)
+      - pattern: text($QUERY.format(...))
+      - pattern: text(f"...")
+      - pattern: text("..." + $VAR + "...")
+      - pattern: text("..." + $VAR)
+      - pattern: db.execute(text(f"..."))
+      - pattern: session.execute(text(f"..."))
+    message: >
+      SQLAlchemy text() is called with a dynamically constructed SQL string using
+      f-string or .format(). This allows SQL injection (CWE-89).
+      Use bound parameters instead: text("SELECT * FROM t WHERE id = :id").bindparams(id=value).
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe:
+        - "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+      owasp:
+        - "A03:2021 - Injection"
+      category: security
+      references:
+        - https://docs.sqlalchemy.org/en/14/core/sqlelement.html#sqlalchemy.sql.expression.text
+
+  - id: sequelize-raw-query-string-concat
+    pattern-either:
+      - pattern: sequelize.query($QUERY + $VAR, ...)
+      - pattern: sequelize.query($QUERY + $VAR)
+      - pattern: sequelize.query(`...${...}...`, ...)
+      - pattern: $SEQUELIZE.query($QUERY + $VAR, ...)
+      - pattern: $SEQUELIZE.query(`...${...}...`, ...)
+    message: >
+      Sequelize.query() is called with a dynamically constructed SQL string.
+      String concatenation or template literals in raw queries allow SQL injection (CWE-89).
+      Use parameterized queries: sequelize.query(sql, { replacements: { param: value } }).
+    languages: [javascript, typescript]
+    severity: ERROR
+    metadata:
+      cwe:
+        - "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+      owasp:
+        - "A03:2021 - Injection"
+      category: security
+
+  - id: prisma-query-raw-template-literal
+    patterns:
+      - pattern: $PRISMA.$queryRaw(`...${ $VAR }...`)
+      - pattern-not: $PRISMA.$queryRaw`...${ $VAR }...`
+    message: >
+      Prisma $queryRaw is called with a regular template literal (not a tagged template).
+      Untagged template literals do NOT use parameterization and allow SQL injection (CWE-89).
+      Use the tagged template literal syntax: prisma.$queryRaw`SELECT ... WHERE id = ${value}`.
+    languages: [javascript, typescript]
+    severity: ERROR
+    metadata:
+      cwe:
+        - "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+      owasp:
+        - "A03:2021 - Injection"
+      category: security
+      references:
+        - https://www.prisma.io/docs/concepts/components/prisma-client/raw-database-access
+
+  - id: prisma-execute-raw-template-literal
+    patterns:
+      - pattern: $PRISMA.$executeRaw(`...${ $VAR }...`)
+      - pattern-not: $PRISMA.$executeRaw`...${ $VAR }...`
+    message: >
+      Prisma $executeRaw is called with a regular template literal (not a tagged template).
+      Untagged template literals do NOT use parameterization and allow SQL injection (CWE-89).
+      Use the tagged template literal syntax: prisma.$executeRaw`UPDATE ... SET col = ${value}`.
+    languages: [javascript, typescript]
+    severity: ERROR
+    metadata:
+      cwe:
+        - "CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')"
+      owasp:
+        - "A03:2021 - Injection"
+      category: security

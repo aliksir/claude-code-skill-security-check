@@ -1,0 +1,106 @@
+rules:
+  - id: insecure-deserialization-pickle-python
+    pattern-either:
+      - pattern: pickle.loads(...)
+      - pattern: pickle.load(...)
+      - pattern: cPickle.loads(...)
+      - pattern: cPickle.load(...)
+      - pattern: _pickle.loads(...)
+      - pattern: _pickle.load(...)
+    message: >
+      pickle.loads() / pickle.load() deserializes arbitrary Python objects and can execute
+      arbitrary code during deserialization (CWE-502).
+      Never deserialize pickle data from untrusted or user-controlled sources.
+      Use a safe serialization format such as JSON or MessagePack instead.
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe:
+        - "CWE-502: Deserialization of Untrusted Data"
+      owasp:
+        - "A08:2021 - Software and Data Integrity Failures"
+      category: security
+      references:
+        - https://docs.python.org/3/library/pickle.html#restrict-globals
+
+  - id: insecure-deserialization-yaml-load-python
+    patterns:
+      - pattern: yaml.load(...)
+      - pattern-not: yaml.load(..., Loader=yaml.SafeLoader)
+      - pattern-not: yaml.load(..., Loader=yaml.CSafeLoader)
+      - pattern-not: yaml.safe_load(...)
+    message: >
+      yaml.load() without an explicit safe Loader can execute arbitrary Python code
+      embedded in the YAML document (CWE-502).
+      Use yaml.safe_load() or yaml.load(..., Loader=yaml.SafeLoader) to prevent
+      arbitrary code execution during deserialization of untrusted YAML.
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe:
+        - "CWE-502: Deserialization of Untrusted Data"
+      owasp:
+        - "A08:2021 - Software and Data Integrity Failures"
+      category: security
+      references:
+        - https://pyyaml.org/wiki/PyYAMLDocumentation
+
+  - id: insecure-deserialization-marshal-ruby
+    pattern-either:
+      - pattern: Marshal.load(...)
+      - pattern: Marshal.restore(...)
+    message: >
+      Marshal.load() / Marshal.restore() deserializes arbitrary Ruby objects and can execute
+      arbitrary code during deserialization (CWE-502).
+      Never deserialize Marshal data from untrusted or user-controlled sources.
+      Use JSON.parse() or a safe serialization library instead.
+    languages: [ruby]
+    severity: ERROR
+    metadata:
+      cwe:
+        - "CWE-502: Deserialization of Untrusted Data"
+      owasp:
+        - "A08:2021 - Software and Data Integrity Failures"
+      category: security
+
+  - id: insecure-deserialization-unserialize-php
+    pattern: unserialize(...)
+    message: >
+      PHP unserialize() deserializes arbitrary PHP objects and can trigger PHP Object
+      Injection attacks, potentially leading to remote code execution (CWE-502).
+      Never call unserialize() on untrusted or user-controlled data.
+      Use json_decode() for data exchange, or restrict allowed classes with
+      unserialize($data, ["allowed_classes" => [AllowedClass::class]]).
+    languages: [php]
+    severity: ERROR
+    metadata:
+      cwe:
+        - "CWE-502: Deserialization of Untrusted Data"
+      owasp:
+        - "A08:2021 - Software and Data Integrity Failures"
+      category: security
+      references:
+        - https://www.php.net/manual/en/function.unserialize.php
+
+  - id: insecure-deserialization-eval-json-javascript
+    pattern-either:
+      - pattern: eval(JSON.stringify(...))
+      - pattern: eval("(" + JSON.stringify(...) + ")")
+      - pattern: |
+          $DATA = JSON.stringify(...)
+          ...
+          eval($DATA)
+    message: >
+      JSON.stringify() output is being passed to eval(). While stringify produces a
+      JSON string, passing it through eval() executes it as JavaScript code, which
+      may allow code injection if the object contains specially crafted values (CWE-502).
+      Use JSON.parse() to deserialize JSON strings instead of eval().
+    languages: [javascript, typescript]
+    severity: ERROR
+    metadata:
+      cwe:
+        - "CWE-502: Deserialization of Untrusted Data"
+        - "CWE-94: Improper Control of Generation of Code ('Code Injection')"
+      owasp:
+        - "A08:2021 - Software and Data Integrity Failures"
+      category: security

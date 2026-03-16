@@ -1,0 +1,158 @@
+rules:
+  - id: weak-hash-python-md5-sha1
+    pattern-either:
+      - pattern: hashlib.md5(...)
+      - pattern: hashlib.sha1(...)
+      - pattern: hashlib.new("md5", ...)
+      - pattern: hashlib.new("sha1", ...)
+      - pattern: hashlib.new('md5', ...)
+      - pattern: hashlib.new('sha1', ...)
+    message: >
+      MD5 and SHA-1 are cryptographically broken hash algorithms (CWE-327, CWE-328).
+      They are vulnerable to collision attacks and should not be used for security purposes
+      such as password hashing, digital signatures, or integrity verification.
+      Use SHA-256 or SHA-3 instead. For passwords, use bcrypt, scrypt, or argon2.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-327: Use of a Broken or Risky Cryptographic Algorithm"
+        - "CWE-328: Use of Weak Hash"
+      owasp:
+        - "A02:2021 - Cryptographic Failures"
+      category: security
+
+  - id: weak-hash-nodejs-md5-sha1
+    pattern-either:
+      - pattern: crypto.createHash("md5")
+      - pattern: crypto.createHash("sha1")
+      - pattern: crypto.createHash('md5')
+      - pattern: crypto.createHash('sha1')
+    message: >
+      MD5 and SHA-1 are cryptographically broken hash algorithms (CWE-327, CWE-328).
+      They are vulnerable to collision attacks and should not be used for security purposes.
+      Use crypto.createHash('sha256') or crypto.createHash('sha3-256') instead.
+      For passwords, use bcrypt or argon2.
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-327: Use of a Broken or Risky Cryptographic Algorithm"
+        - "CWE-328: Use of Weak Hash"
+      owasp:
+        - "A02:2021 - Cryptographic Failures"
+      category: security
+
+  - id: weak-hash-java-md5-sha1
+    pattern-either:
+      - pattern: MessageDigest.getInstance("MD5")
+      - pattern: MessageDigest.getInstance("SHA-1")
+      - pattern: MessageDigest.getInstance("SHA1")
+    message: >
+      MD5 and SHA-1 are cryptographically broken hash algorithms (CWE-327, CWE-328).
+      They are vulnerable to collision attacks and should not be used for security purposes.
+      Use MessageDigest.getInstance("SHA-256") or MessageDigest.getInstance("SHA3-256") instead.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-327: Use of a Broken or Risky Cryptographic Algorithm"
+        - "CWE-328: Use of Weak Hash"
+      owasp:
+        - "A02:2021 - Cryptographic Failures"
+      category: security
+
+  - id: weak-cipher-des-3des-rc4-nodejs
+    pattern-either:
+      - pattern: crypto.createCipheriv("des", ...)
+      - pattern: crypto.createCipheriv("des-cbc", ...)
+      - pattern: crypto.createCipheriv("des-ecb", ...)
+      - pattern: crypto.createCipheriv("des3", ...)
+      - pattern: crypto.createCipheriv("des-ede3", ...)
+      - pattern: crypto.createCipheriv("des-ede3-cbc", ...)
+      - pattern: crypto.createCipheriv("rc4", ...)
+      - pattern: crypto.createCipher("des", ...)
+      - pattern: crypto.createCipher("des3", ...)
+      - pattern: crypto.createCipher("rc4", ...)
+    message: >
+      DES, 3DES (Triple DES), and RC4 are weak symmetric encryption algorithms (CWE-327).
+      DES uses a 56-bit key (brute-forceable), 3DES is deprecated, and RC4 has multiple
+      known vulnerabilities. Use AES-256-GCM or AES-256-CBC instead.
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-327: Use of a Broken or Risky Cryptographic Algorithm"
+      owasp:
+        - "A02:2021 - Cryptographic Failures"
+      category: security
+
+  - id: weak-cipher-des-3des-rc4-python
+    pattern-either:
+      - pattern: Cipher.new(...)
+      - pattern: DES.new(...)
+      - pattern: DES3.new(...)
+      - pattern: ARC4.new(...)
+    message: >
+      DES, 3DES (Triple DES), and RC4 (ARC4) are weak symmetric encryption algorithms (CWE-327).
+      DES uses a 56-bit key (brute-forceable), 3DES is deprecated, and RC4 has multiple
+      known vulnerabilities. Use AES with GCM mode (AES.new(key, AES.MODE_GCM)) instead.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-327: Use of a Broken or Risky Cryptographic Algorithm"
+      owasp:
+        - "A02:2021 - Cryptographic Failures"
+      category: security
+
+  - id: insecure-random-nodejs-security-context
+    pattern-either:
+      - pattern: |
+          $TOKEN = Math.random()
+      - pattern: |
+          $KEY = Math.random()
+      - pattern: |
+          $PASSWORD = Math.random()
+      - pattern: |
+          $SECRET = Math.random()
+      - pattern: |
+          $NONCE = Math.random()
+      - pattern: |
+          $SALT = Math.random()
+      - pattern: Math.random().toString(36)
+    message: >
+      Math.random() is not cryptographically secure (CWE-330).
+      It must not be used to generate security-sensitive values such as tokens, keys,
+      passwords, nonces, or salts. Use crypto.randomBytes() or crypto.randomUUID() instead.
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-330: Use of Insufficiently Random Values"
+      owasp:
+        - "A02:2021 - Cryptographic Failures"
+      category: security
+
+  - id: insecure-random-python-security-context
+    pattern-either:
+      - pattern: random.random()
+      - pattern: random.randint(...)
+      - pattern: random.choice(...)
+      - pattern: random.randrange(...)
+      - pattern: random.shuffle(...)
+    message: >
+      Python's random module is not cryptographically secure (CWE-330).
+      It must not be used to generate security-sensitive values such as tokens, keys,
+      passwords, nonces, or salts. Use secrets.token_bytes(), secrets.token_hex(),
+      or secrets.token_urlsafe() instead.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-330: Use of Insufficiently Random Values"
+      owasp:
+        - "A02:2021 - Cryptographic Failures"
+      category: security
+      references:
+        - https://docs.python.org/3/library/secrets.html

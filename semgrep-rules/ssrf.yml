@@ -1,0 +1,129 @@
+rules:
+  - id: ssrf-fetch-user-input
+    pattern-either:
+      - pattern: fetch($USER_INPUT)
+      - pattern: fetch(req.body.$FIELD)
+      - pattern: fetch(req.query.$FIELD)
+      - pattern: fetch(req.params.$FIELD)
+    message: >
+      fetch() is called with a potentially user-controlled URL.
+      This may allow Server-Side Request Forgery (CWE-918).
+      Validate and allowlist the URL before making the request.
+      Consider using a URL parser and checking against an allowlist of trusted hosts.
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-918: Server-Side Request Forgery (SSRF)"
+      owasp:
+        - "A10:2021 - Server-Side Request Forgery (SSRF)"
+      category: security
+
+  - id: ssrf-axios-user-input
+    pattern-either:
+      - pattern: axios.get($USER_INPUT)
+      - pattern: axios.post($USER_INPUT, ...)
+      - pattern: axios.put($USER_INPUT, ...)
+      - pattern: axios.delete($USER_INPUT)
+      - pattern: axios.get(req.body.$FIELD)
+      - pattern: axios.get(req.query.$FIELD)
+      - pattern: axios.get(req.params.$FIELD)
+      - pattern: |
+          axios({url: req.body.$FIELD, ...})
+      - pattern: |
+          axios({url: req.query.$FIELD, ...})
+    message: >
+      axios() is called with a potentially user-controlled URL.
+      This may allow Server-Side Request Forgery (CWE-918).
+      Validate and allowlist the URL before making the request.
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-918: Server-Side Request Forgery (SSRF)"
+      owasp:
+        - "A10:2021 - Server-Side Request Forgery (SSRF)"
+      category: security
+
+  - id: ssrf-node-http-user-input
+    pattern-either:
+      - pattern: http.get($USER_INPUT, ...)
+      - pattern: http.request($USER_INPUT, ...)
+      - pattern: https.get($USER_INPUT, ...)
+      - pattern: https.request($USER_INPUT, ...)
+    message: >
+      Node.js http/https module is called with a potentially user-controlled URL.
+      This may allow Server-Side Request Forgery (CWE-918).
+      Validate and allowlist the URL before making the request.
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-918: Server-Side Request Forgery (SSRF)"
+      owasp:
+        - "A10:2021 - Server-Side Request Forgery (SSRF)"
+      category: security
+
+  - id: ssrf-open-redirect-express
+    pattern-either:
+      - pattern: res.redirect(req.query.$FIELD)
+      - pattern: res.redirect(req.body.$FIELD)
+      - pattern: res.redirect(req.params.$FIELD)
+    message: >
+      res.redirect() is called with a user-controlled value.
+      This allows open redirect attacks, which can be used as a step in SSRF
+      or phishing attacks (CWE-918, CWE-601).
+      Validate the redirect target against an allowlist of trusted URLs.
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-918: Server-Side Request Forgery (SSRF)"
+        - "CWE-601: URL Redirection to Untrusted Site ('Open Redirect')"
+      owasp:
+        - "A10:2021 - Server-Side Request Forgery (SSRF)"
+      category: security
+
+  - id: ssrf-python-requests-user-input
+    pattern-either:
+      - pattern: requests.get($URL_PARAM, ...)
+      - pattern: requests.post($URL_PARAM, ...)
+      - pattern: requests.put($URL_PARAM, ...)
+      - pattern: requests.delete($URL_PARAM, ...)
+      - pattern: httpx.get($URL_PARAM, ...)
+      - pattern: httpx.post($URL_PARAM, ...)
+      - pattern: httpx.AsyncClient().get($URL_PARAM, ...)
+    message: >
+      requests/httpx is called with a potentially user-controlled URL parameter.
+      This may allow Server-Side Request Forgery (CWE-918).
+      Validate and allowlist the URL before making the request.
+      Check the scheme (http/https only) and the host against a trusted allowlist.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-918: Server-Side Request Forgery (SSRF)"
+      owasp:
+        - "A10:2021 - Server-Side Request Forgery (SSRF)"
+      category: security
+
+  - id: ssrf-python-urllib-user-input
+    pattern-either:
+      - pattern: urllib.request.urlopen($USER_INPUT)
+      - pattern: urllib.urlopen($USER_INPUT)
+      - pattern: urllib.request.urlopen($URL_PARAM)
+      - pattern: urllib.urlopen($URL_PARAM)
+    message: >
+      urllib.urlopen() is called with a potentially user-controlled URL.
+      This may allow Server-Side Request Forgery (CWE-918).
+      Validate the URL against an allowlist of trusted hosts before opening.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe:
+        - "CWE-918: Server-Side Request Forgery (SSRF)"
+      owasp:
+        - "A10:2021 - Server-Side Request Forgery (SSRF)"
+      category: security
+      references:
+        - https://portswigger.net/web-security/ssrf

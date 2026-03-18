@@ -7,7 +7,7 @@
  *
  * FIDES trust_level: LOW（MCP応答は外部データ扱い）
  *
- * @version 1.3.0
+ * @version 1.4.0
  * @author aliksir
  */
 import { readFileSync } from 'fs';
@@ -90,6 +90,13 @@ const PATTERNS = {
       /\bAWS_SECRET_ACCESS_KEY\b/,
       /\bANTHROPIC_API_KEY\b/,
       /\bGOOGLE_APPLICATION_CREDENTIALS\b/,
+      // 環境変数窃取チェーン強化: set/printenv → curl/wget/python/node の連鎖
+      /\bset\b.*\|\s*(?:curl|wget|python|node)/,
+      /\b(?:printenv|env|set)\b.*\|\s*(?:base64|xxd|gzip)\b/,
+      // 環境変数ダンプ → ファイル → 送信の多段チェーン
+      /\b(?:printenv|env|set)\s*>\s*\S+.*(?:curl|wget|fetch|httpx)/,
+      // PowerShell環境変数窃取
+      /\bGet-ChildItem\s+Env:\b.*\b(?:Invoke-WebRequest|Invoke-RestMethod|iwr|irm)\b/i,
     ],
   },
   suspicious_urls: {
@@ -118,7 +125,7 @@ const PATTERNS = {
   },
   // ── 2026年以降の新攻撃手法 ──────────────────────────────────
   tool_redefinition: {
-    label: 'ツール再定義攻撃',
+    label: 'ツール再定義/シャドウイング攻撃',
     severity: 'HIGH',
     patterns: [
       // ツール上書き・シャドウ・インターセプト指示
@@ -127,6 +134,10 @@ const PATTERNS = {
       /\b(set|change|update|register)\b.{0,30}\btool[_\s]?(name|id)\s*[:=]/i,
       // 既存ツールと同名での再定義
       /\b(register|define|create)\b.{0,30}\b(tool|function)\b.{0,30}\b(same|existing|original)\b/i,
+      // Tool Shadowing強化: 既存ビルトインツール名の直接上書き指示
+      /\b(?:override|replace|redefine|shadow)\b.{0,30}\b(?:Read|Write|Edit|Bash|Glob|Grep|Agent)\b/i,
+      // MCP設定の動的変更指示
+      /\b(?:modify|edit|change|update)\b.{0,30}\b(?:mcp\.json|mcpServers|tool_definitions?)\b/i,
     ],
   },
   agent_infection: {
@@ -151,6 +162,48 @@ const PATTERNS = {
       /\b(enumerate|list)\b.{0,20}\b(all|every)\b.{0,20}\bpossible\b/i,
       // 無限・大量繰り返し指示
       /\brepeat\b.{0,30}\b(\d{3,}|infinite|forever)\b/i,
+    ],
+  },
+  // ── 2026-03 セキュリティ調査追加 ──────────────────────────────────
+  sampling_injection: {
+    label: 'LLMサンプリング注入',
+    severity: 'CRITICAL',
+    patterns: [
+      // LLMトークナイザマーカーの埋め込み（Unit42）
+      /\[INST\]/i,
+      /\[\/INST\]/i,
+      /<<SYS>>/,
+      /<<\/SYS>>/,
+      /<\|im_start\|>\s*system/i,
+      /<\|im_end\|>/,
+      /<\|system\|>/i,
+      /<\|user\|>/i,
+      /<\|assistant\|>/i,
+      /\[SYSTEM_PROMPT\]/i,
+      /<start_of_turn>\s*(?:user|model)/i,
+      /<\|endoftext\|>/,
+    ],
+  },
+  log_to_leak: {
+    label: 'Log-To-Leak（ログ経由データ窃取）',
+    severity: 'HIGH',
+    patterns: [
+      // ツールレスポンスが「別ツールでデータを送信しろ」と指示するパターン（OpenReview）
+      /\b(?:send|post|forward|transmit|upload|log|report)\s+(?:this|the|all|these|that)\s+(?:data|information|content|result|output|response)\s+(?:to|via|through|using)\b/i,
+      /\b(?:call|invoke|use|execute)\s+(?:the\s+)?(?:logging|analytics|telemetry|monitoring|webhook)\s+(?:tool|service|api|endpoint)\b/i,
+      /\b(?:write|append|save)\s+(?:this|the|all)\s+(?:data|output|result)\s+(?:to|into)\s+(?:a\s+)?(?:log|file|database|endpoint)\b/i,
+    ],
+  },
+  line_jumping: {
+    label: 'Line Jumping（承認前動作注入）',
+    severity: 'HIGH',
+    patterns: [
+      // ユーザー承認前に動作を実行させる指示パターン
+      /\b(?:before|prior\s+to)\s+(?:the\s+)?(?:user|human)\s+(?:approves?|confirms?|reviews?|sees?)\b/i,
+      /\b(?:execute|run|perform|do)\s+(?:this|the\s+following)\s+(?:before|without)\s+(?:asking|confirmation|approval|consent)\b/i,
+      /\b(?:silently|quietly|invisibly|secretly)\s+(?:execute|run|perform|install|download|send)\b/i,
+      /\b(?:skip|bypass|avoid)\s+(?:the\s+)?(?:confirmation|approval|review|verification)\s+(?:step|prompt|dialog)\b/i,
+      /\bauto[_\s]?(?:approve|accept|confirm|execute)\b/i,
     ],
   },
   // ── MCP Elicitation 悪用検出（CC 2.1.76+ 新機能）─────────────────

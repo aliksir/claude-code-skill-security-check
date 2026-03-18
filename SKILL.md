@@ -3,7 +3,7 @@ name: skill-security-check
 description: "Security audit for Claude Code community skills. Scans SKILL.md, references/, and scripts/ for prompt injection, data exfiltration, permission bypass, dangerous commands, supply chain risks, backdoor persistence, API endpoint hijacking, namespace squatting, Unicode homoglyph attacks, context window poisoning, and temporal attack patterns. Can be used as a Claude Code skill (agent-based) or as a standalone CLI tool (skill-scanner). Use: /skill-security-check"
 metadata:
   author: aliks
-  version: "2.4.0"
+  version: "2.5.0"
 risk: low
 source: community
 ---
@@ -377,6 +377,35 @@ MCP Elicitation/ElicitationResult経由の権限昇格:
 - Elicitation のUI要素（ボタン、フォーム）にコマンドを埋め込み
 - 「確認」を装ってユーザーに危険な操作を承認させる
 - Elicitation経由でAPIキーや認証情報を収集するパターン
+
+### 27. LLM Sampling Injection Markers
+
+MCPレスポンスに埋め込まれたLLMトークナイザマーカー（Unit42報告）:
+- `[INST]`, `[/INST]` — Llama/Mistral instruction marker
+- `<<SYS>>`, `<</SYS>>` — Llama system prompt marker
+- `<|im_start|>system`, `<|im_end|>` — ChatML system marker
+- `<|system|>`, `<|user|>`, `<|assistant|>` — Phi marker
+- `<start_of_turn>user`, `<start_of_turn>model` — Gemini turn marker
+- `<|endoftext|>` — OpenAI end-of-text marker
+- `[SYSTEM_PROMPT]` — Generic system prompt marker
+- `Human:`, `Assistant:` at line start — Anthropic conversation marker
+
+### 28. Log-To-Leak (ログ経由データ窃取)
+
+ツールレスポンスが別ツールへのデータ送信を指示するパターン（OpenReview報告）:
+- `send/post/forward this data to` — データ送信指示
+- `call/invoke the logging/analytics/telemetry tool` — loggingツール呼び出し指示
+- `write/append this data to a log/file/endpoint` — ログ書き込み指示
+- 正規のログ出力と区別するため、「指示形式（動詞+対象+宛先）」の3要素を確認
+
+### 29. Line Jumping (承認前動作注入)
+
+ユーザー承認前に動作を実行させるパターン:
+- `before the user approves/confirms/reviews` — 承認前実行指示
+- `execute/run without asking/confirmation/approval` — 確認なし実行
+- `silently/quietly/secretly execute/run/install` — 隠密実行
+- `skip/bypass the confirmation/approval step` — 承認バイパス
+- `auto_approve`, `auto_execute`, `auto_confirm` — 自動承認パターン
 
 Report ALL hits (including false positives). Classification is done in the synthesis phase.
 

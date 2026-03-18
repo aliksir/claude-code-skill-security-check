@@ -91,8 +91,8 @@ const PATTERNS = {
       /\bANTHROPIC_API_KEY\b/,
       /\bGOOGLE_APPLICATION_CREDENTIALS\b/,
       // 環境変数窃取チェーン強化: set/printenv → curl/wget/python/node の連鎖
-      /\bset\b.*\|\s*(?:curl|wget|python|node)/,
-      /\b(?:printenv|env|set)\b.*\|\s*(?:base64|xxd|gzip)\b/,
+      /\bset\b.{0,50}\|\s*(?:curl|wget|python|node)/,
+      /\b(?:printenv|env|set)\b.{0,50}\|\s*(?:base64|xxd|gzip)\b/,
       // 環境変数ダンプ → ファイル → 送信の多段チェーン
       /\b(?:printenv|env|set)\s*>\s*\S+.*(?:curl|wget|fetch|httpx)/,
       // PowerShell環境変数窃取
@@ -203,7 +203,7 @@ const PATTERNS = {
       /\b(?:execute|run|perform|do)\s+(?:this|the\s+following)\s+(?:before|without)\s+(?:asking|confirmation|approval|consent)\b/i,
       /\b(?:silently|quietly|invisibly|secretly)\s+(?:execute|run|perform|install|download|send)\b/i,
       /\b(?:skip|bypass|avoid)\s+(?:the\s+)?(?:confirmation|approval|review|verification)\s+(?:step|prompt|dialog)\b/i,
-      /\bauto[_\s]?(?:approve|accept|confirm|execute)\b/i,
+      /\bauto[_\s-]?(?:approve|accept|confirm|execute)\b/i,
     ],
   },
   // ── MCP Elicitation 悪用検出（CC 2.1.76+ 新機能）─────────────────

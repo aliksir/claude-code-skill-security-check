@@ -4,6 +4,16 @@ All notable changes to `skill-security-check` are documented here.
 
 ---
 
+## v2.5.0 (2026-03-18)
+
+- **New: 3 detection patterns** (#27-#29)
+  - #27: LLM Sampling Injection Markers — `[INST]`, `<<SYS>>`, `<|im_start|>`, Gemini/OpenAI tokenizer markers (Unit42)
+  - #28: Log-To-Leak — logging/analytics/telemetry tool invocation instructions for data exfiltration (OpenReview)
+  - #29: Line Jumping — pre-approval action injection, silent/secret execution patterns
+- **Enhanced: mcp-response-inspector.mjs** (v1.4.0) — 3 new categories (sampling_injection CRITICAL, log_to_leak HIGH, line_jumping HIGH)
+- **Enhanced: Tool Shadowing** — built-in tool name override detection (Read/Write/Edit/Bash), MCP config modification patterns
+- **Enhanced: Data Exfiltration** — env theft chain strengthened (`set|`, `printenv > file`, PowerShell `Get-ChildItem Env:`)
+
 ## v2.4.0 (2026-03-16)
 
 - **New: 4 Semgrep custom rules** (3 → 7 total)

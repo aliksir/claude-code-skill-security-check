@@ -4,6 +4,12 @@ All notable changes to `skill-security-check` are documented here.
 
 ---
 
+## v2.5.1 (2026-03-22)
+
+- **Fix: rename `install.mjs` → `install.js`** — npm publish strips `bin` entries with `.mjs` extension, causing the installer to be absent after install
+
+---
+
 ## v2.5.0 (2026-03-18)
 
 - **New: 3 detection patterns** (#27-#29)

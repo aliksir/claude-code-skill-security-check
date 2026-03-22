@@ -1,0 +1,13 @@
+{
+  "name": "skill-security-check",
+  "version": "2.5.0",
+  "description": "Security audit for Claude Code community skills — scans for prompt injection, data exfiltration, permission bypass, and 10+ attack patterns",
+  "author": {
+    "name": "aliks",
+    "url": "https://github.com/aliksir"
+  },
+  "homepage": "https://github.com/aliksir/claude-code-skill-security-check",
+  "repository": "https://github.com/aliksir/claude-code-skill-security-check",
+  "license": "MIT",
+  "keywords": ["security", "audit", "skills", "mcp", "semgrep", "hooks"]
+}

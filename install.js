@@ -14,7 +14,7 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const PKG_ROOT = join(__dirname, "..");
+const PKG_ROOT = __dirname;
 
 const HOME = process.env.HOME || process.env.USERPROFILE;
 if (!HOME) {
@@ -44,8 +44,9 @@ function copyDir(srcDir, destDir) {
       console.log(`  [skip] ${file} (already exists)`);
       continue;
     }
+    const isOverwrite = FORCE && existsSync(destPath);
     copyFileSync(srcPath, destPath);
-    console.log(FORCE && existsSync(destPath) ? `  [overwrite] ${file}` : `  [copy] ${file}`);
+    console.log(isOverwrite ? `  [overwrite] ${file}` : `  [copy] ${file}`);
   }
 }
 

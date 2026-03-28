@@ -4,6 +4,19 @@ All notable changes to `skill-security-check` are documented here.
 
 ---
 
+## [3.0.0] - 2026-03-28
+
+### Added
+- 8 new detection patterns: package manager lifecycle scripts, .git/hooks manipulation, settings.json hijack, GitHub Actions injection, symlink abuse, delayed execution, hidden state files, cross-project escape
+- validate-bash.sh: Tier 10 (lifecycle scripts), Tier 11 (.git/hooks)
+- mcp-response-inspector.mjs: 4 new detection categories
+
+### Changed
+- package.json description updated for plugin submission
+- Total detection patterns: 29 → 37
+
+---
+
 ## v2.5.1 (2026-03-22)
 
 - **Fix: rename `install.mjs` → `install.js`** — npm publish strips `bin` entries with `.mjs` extension, causing the installer to be absent after install

@@ -206,6 +206,65 @@ const PATTERNS = {
       /\bauto[_\s-]?(?:approve|accept|confirm|execute)\b/i,
     ],
   },
+  // ── 2026-03-28 サプライチェーン・CI/CD攻撃対策 ──────────────────
+  lifecycle_script_injection: {
+    label: 'Lifecycle Script注入（サプライチェーン攻撃）',
+    severity: 'HIGH',
+    patterns: [
+      // package.json scripts セクション内のpostinstall/preinstall/install
+      /"(?:postinstall|preinstall|install)"\s*:\s*"[^"]*(?:curl|wget|fetch|bash|sh|python|node|exec|eval|spawn)/i,
+      // npm/yarn lifecycle スクリプトへの直接実行指示
+      /\b(?:npm|yarn)\s+run\s+(?:postinstall|preinstall)\b/i,
+      // setup.py cmdclass でのカスタムコマンド（subprocess含む）
+      /\bcmdclass\b[\s\S]{0,200}\bsubprocess\b/i,
+      // pip install でカスタムインデックスを使用
+      /\bpip\s+install\b[^'"]*(?:--index-url|--extra-index-url)\s+(?!https:\/\/(?:pypi\.org|files\.pythonhosted\.org))/i,
+    ],
+  },
+  git_hooks_manipulation: {
+    label: 'Gitフック注入（.git/hooks/ 書き込み）',
+    severity: 'CRITICAL',
+    patterns: [
+      // .git/hooks/ への書き込み・コピー・移動指示
+      /\b(?:cp|mv|tee|copy)\b[^'"`\n]*\.git\/hooks\//i,
+      // echo リダイレクト to .git/hooks/
+      /(?:>|>>)\s*[^'"`\n]*\.git\/hooks\//,
+      // chmod +x on .git/hooks/
+      /\bchmod\b[^'"`\n]*\+x[^'"`\n]*\.git\/hooks\//i,
+      // シンボリックリンク to .git/hooks/
+      /\bln\s+-s\b[^'"`\n]*\.git\/hooks\//i,
+    ],
+  },
+  settings_hijack: {
+    label: 'Settings.json乗っ取り（設定ファイル操作）',
+    severity: 'CRITICAL',
+    patterns: [
+      // .claude/settings.json への書き込み指示
+      /\.claude\/settings(?:\.local)?\.json/i,
+      // allowedTools の操作
+      /\ballowedTools\b[\s\S]{0,100}(?:write|add|push|append|modify|edit)/i,
+      // mcpServers への追加
+      /\bmcpServers\b[\s\S]{0,100}(?:add|register|install|append)/i,
+      // ANTHROPIC_BASE_URL / OPENAI_BASE_URL の変更指示
+      /(?:ANTHROPIC_BASE_URL|OPENAI_BASE_URL)\s*=\s*["']?https?:\/\/(?!api\.anthropic\.com)/i,
+      // defaultMode の変更
+      /\bdefaultMode\b[\s\S]{0,50}(?:auto|bypassPermissions|yolo)/i,
+    ],
+  },
+  ci_workflow_injection: {
+    label: 'GitHub Actions Workflow注入（CI/CDパイプライン汚染）',
+    severity: 'HIGH',
+    patterns: [
+      // .github/workflows/ への書き込み指示
+      /\.github\/workflows\/[^/\s]*\.ya?ml/i,
+      // pull_request_target トリガー（フォークPRからのシークレットアクセス）
+      /\bpull_request_target\b/i,
+      // workflow_dispatch with inputs — 任意入力受け付け
+      /\bworkflow_dispatch\b[\s\S]{0,300}\binputs\b/i,
+      // GitHub Actions expression injection (未サニタイズのeventデータ展開)
+      /\$\{\{\s*github\.event\./,
+    ],
+  },
   // ── MCP Elicitation 悪用検出（CC 2.1.76+ 新機能）─────────────────
   elicitation_abuse: {
     label: 'Elicitation悪用',

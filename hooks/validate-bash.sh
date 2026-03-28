@@ -167,4 +167,33 @@ if echo "$command_unquoted" | grep -qiE '\bnc\b.*\s-e\s.*(bash|sh|zsh)'; then
   deny "netcat リバースシェルは禁止です"
 fi
 
+# === Tier 10: パッケージマネージャ lifecycle scripts（サプライチェーン攻撃）===
+# npm/yarn のpostinstall/preinstallスクリプト実行
+if echo "$command_unquoted" | grep -qiE '\bnpm\s+run\s+(postinstall|preinstall)\b'; then
+  deny "npm lifecycle scriptの直接実行は禁止です（サプライチェーン攻撃対策）。総司令に確認してください"
+fi
+
+if echo "$command_unquoted" | grep -qiE '\byarn\s+(postinstall|preinstall)\b'; then
+  deny "yarn lifecycle scriptの直接実行は禁止です（サプライチェーン攻撃対策）。総司令に確認してください"
+fi
+
+# pip install でカスタムインデックスを指定するパターン（偽パッケージリポジトリ）
+if echo "$command_unquoted" | grep -qiE '\bpip\s+install\b.*--(index-url|extra-index-url)\b'; then
+  deny "pip install のカスタムインデックス指定は禁止です（サプライチェーン攻撃対策）。総司令に確認してください" "公式PyPI (https://pypi.org) からのインストールのみ許可"
+fi
+
+# === Tier 11: .git/hooks/ への書き込み（Gitフック注入）===
+# .git/hooks/ へのcp/mv/tee/echoリダイレクト操作
+if echo "$command_unquoted" | grep -qiE '\b(cp|mv|tee)\b.*\.git/hooks/'; then
+  deny ".git/hooks/ への書き込みは禁止です（CVE-2025-59536対策）。総司令に確認してください"
+fi
+
+if echo "$command" | grep -qiE '(>|>>)\s*.*\.git/hooks/'; then
+  deny ".git/hooks/ へのリダイレクト書き込みは禁止です（CVE-2025-59536対策）。総司令に確認してください"
+fi
+
+if echo "$command_unquoted" | grep -qiE '\bln\s+-s\b.*\.git/hooks/'; then
+  deny ".git/hooks/ へのシンボリックリンク作成は禁止です（CVE-2025-59536対策）。総司令に確認してください"
+fi
+
 exit 0

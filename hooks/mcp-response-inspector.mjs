@@ -282,6 +282,27 @@ const PATTERNS = {
       /"(?:action|type)"\s*:\s*"(?:execute|run|eval|inject|shell)"/i,
     ],
   },
+
+  // 27. Debug Statement Leakage — デバッグ文からの認証情報漏洩
+  // 研究根拠: 17,022件AIスキル監査で漏洩の73.5%がprint/console.log残留
+  debug_statement_leakage: {
+    label: 'Debug Statement Leakage (デバッグ文の機密漏洩)',
+    severity: 'CRITICAL',
+    patterns: [
+      // Python print + 機密変数
+      /\bprint\s*\(\s*(?:os\.environ\[|os\.getenv\()\s*['"](?:API|SECRET|TOKEN|KEY|PASSWORD|CREDENTIAL|AUTH)/i,
+      /\bprint\s*\(\s*f?['"].*(?:api[_\s]?key|secret|token|password|credential)\s*[=:]/i,
+      // Node.js console + 環境変数
+      /\bconsole\.(?:log|error|warn|info|debug)\s*\(\s*process\.env\.(?:API|SECRET|TOKEN|KEY|PASSWORD|CREDENTIAL|AUTH|AWS_|OPENAI_|ANTHROPIC_)/i,
+      /\bconsole\.(?:log|error|warn|info|debug)\s*\(\s*[`'"].*(?:api[_\s]?key|secret|token|password|credential)\s*[=:]/i,
+      // Bash echo + 機密環境変数
+      /\becho\s+\$\{?(?:[A-Z_]*(?:API|SECRET|TOKEN|KEY|PASSWORD|CREDENTIAL|AUTH)[A-Z_]*)\}?/i,
+      // PowerShell
+      /\bWrite-(?:Host|Output)\s+\$env:(?:API|SECRET|TOKEN|KEY|PASSWORD|CREDENTIAL|AUTH)/i,
+      // Logger + 機密キーワード
+      /\b(?:logger|logging)\.\w+\s*\(\s*f?['"].*(?:password|token|secret|api[_\s]?key|credential|private[_\s]?key)\s*[=:]/i,
+    ],
+  },
 };
 
 // 安全なMCPサーバーのホワイトリスト（誤検知削減）

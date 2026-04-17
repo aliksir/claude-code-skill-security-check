@@ -87,6 +87,45 @@ if echo "$command" | grep -qiE '\bnode\s+-(e|.*e)\s.*\b(fetch|http\.get|https\.g
   deny "Node inline コードでのHTTP通信は禁止です（exfiltration対策）。スクリプトファイル経由で実行してください"
 fi
 
+# === Tier 5.5: npx エコシステムでのインライン任意コード実行（CVE-2026-40933対策）===
+# npx/npm exec/pnpm/yarn/bun/deno の -c/--call/eval 等の任意コード実行フラグをブロック
+# 通常の npx @scope/pkg や npx --yes @scope/pkg は通す（-c/--call なしのため検出されない）
+
+# npx -c / npx --call（直接インライン実行）
+if echo "$command" | grep -qiE '\bnpx\s+.*(-c|--call)\b'; then
+  deny "npx エコシステムでのインライン任意コード実行は禁止です（CVE-2026-40933対策）。スクリプトファイル経由で実行してください"
+fi
+
+# npx --package foo -c "..."（パッケージ指定付きインライン実行）
+if echo "$command" | grep -qiE '\bnpx\s+.*--package.+\s-c\b'; then
+  deny "npx エコシステムでのインライン任意コード実行は禁止です（CVE-2026-40933対策）。スクリプトファイル経由で実行してください"
+fi
+
+# npm exec -- cmd / npm exec -c "..."（npm v7+ セパレータ経由）
+if echo "$command_unquoted" | grep -qiE '\bnpm\s+exec\s+(--|(-c\b))'; then
+  deny "npx エコシステムでのインライン任意コード実行は禁止です（CVE-2026-40933対策）。スクリプトファイル経由で実行してください"
+fi
+
+# pnpm exec/dlx -c
+if echo "$command" | grep -qiE '\bpnpm\s+(exec|dlx)\s+.*\s-c\b'; then
+  deny "npx エコシステムでのインライン任意コード実行は禁止です（CVE-2026-40933対策）。スクリプトファイル経由で実行してください"
+fi
+
+# yarn dlx -c
+if echo "$command" | grep -qiE '\byarn\s+dlx\s+.*\s-c\b'; then
+  deny "npx エコシステムでのインライン任意コード実行は禁止です（CVE-2026-40933対策）。スクリプトファイル経由で実行してください"
+fi
+
+# bun x/exec -c / bun -e "code"
+if echo "$command" | grep -qiE '\bbun\s+(x|exec)\s+.*\s-c\b|\bbun\s+-e\b'; then
+  deny "npx エコシステムでのインライン任意コード実行は禁止です（CVE-2026-40933対策）。スクリプトファイル経由で実行してください"
+fi
+
+# deno eval / deno repl / deno -e / deno -p
+if echo "$command_unquoted" | grep -qiE '\bdeno\s+(eval|repl|-e|-p)\b'; then
+  deny "npx エコシステムでのインライン任意コード実行は禁止です（CVE-2026-40933対策）。スクリプトファイル経由で実行してください"
+fi
+
 # === Tier 6: 機密ファイルの直接読み取り防止 ===
 # SSH秘密鍵・設定（\bはドット前で効かないため、パス区切り前提で検知）
 if echo "$command" | grep -qiE '\b(cat|head|tail|less|more|cp|scp|base64|xxd)\b.*[/\\]\.ssh/(id_|config|known_hosts|authorized_keys|[a-z]+_key)'; then

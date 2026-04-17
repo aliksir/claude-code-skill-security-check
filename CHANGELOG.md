@@ -4,6 +4,13 @@ All notable changes to `skill-security-check` are documented here.
 
 ---
 
+## [Unreleased]
+
+### Added
+- **validate-bash.sh: Tier 5.5 npx ecosystem inline-eval deny** — blocks arbitrary-code-execution flags (`-c`, `--call`, `eval`, `-e`, `-p`) combined with npx/npm exec/pnpm/yarn/bun/deno. Mitigates CVE-2026-40933 (Flowise Authenticated RCE Via MCP Adapters `npx -c` pattern). Normal usage like `npx @scope/pkg` and `npx --yes @scope/pkg` passes through via AND-condition design. Reference: https://github.com/FlowiseAI/Flowise/security/advisories/GHSA-c9gw-hvqq-f33r
+
+---
+
 ## [3.0.0] - 2026-03-28
 
 ### Added

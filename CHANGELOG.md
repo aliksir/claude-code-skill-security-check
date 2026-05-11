@@ -16,10 +16,15 @@ All notable changes to `skill-security-check` are documented here.
 
 ### Changed
 - README.md ATR Acknowledgments updated from "311 rules" to "338 rules in v2.1.2" to reflect upstream snapshot at the time of bundling.
+- `package.json` version bumped to `3.1.1`. `bin` field migrated from string form (`"bin": "install.js"`) to object form (`"bin": {"claude-code-skill-security-check": "install.js"}`) to resolve the `npm pkg fix` advisory issued during v3.1.0 publish.
+- `.npmignore` adds `_deleted/` to exclude the local file-deletion safe-area from npm tarballs (v3.1.0 tarball inadvertently shipped `_deleted/bin/cli.js`, `_deleted/bin/install.mjs`, `_deleted/cli.js`; v3.1.1 excludes them).
+
+### Fixed
+- `skills/security-check/SKILL.md` frontmatter `version` corrected from `"2.5.0"` (stale since pre-v3.0.0) to `"3.1.1"` to align with package version.
 
 ### Notes
 - Acknowledged scope adjustment: Earlier ATR marketing materials referenced a `generic-regex` export, but ATR v2.1.2 CLI exposes only `convert splunk|elastic`. The bundled snapshot includes the YAML source rules under `rules/` and the Splunk SPL export, which together cover the same patterns. See `semgrep-rules/atr/README.md`.
-- npm publish behavior for this bundle (whether `semgrep-rules/atr/` is included via tarball or excluded via `.npmignore`) is **deferred** to a future decision before publishing v3.1.x. v3.1.0 itself remains unpublished at the time of this release.
+- The previously published v3.1.0 tarball did not include ATR bundle (it was published from a working directory at commit `0fae335` before the ATR commit was pulled). v3.1.1 includes the full ATR bundle (~4 MB unpacked) under `semgrep-rules/atr/`.
 
 ## [3.1.0] - 2026-05-11
 

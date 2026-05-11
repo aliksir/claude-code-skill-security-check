@@ -6,6 +6,21 @@ All notable changes to `skill-security-check` are documented here.
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-05-11
+
+### Added
+- **Bundled ATR (Agent Threat Rules) v2.1.2** as a static reference resource under `semgrep-rules/atr/` — 338 YAML detection rules across 10 threat categories (prompt-injection, agent-manipulation, skill-compromise, context-exfiltration, tool-poisoning, privilege-escalation, model-abuse, excessive-autonomy, model-security, data-poisoning). Includes upstream LICENSE (MIT), `atr stats` snapshot (`stats.txt`), and Splunk SPL export (`splunk-queries.spl`). ATR rules are **not evaluated by the skill mode or runtime hooks**; they serve as a reference for downstream tooling such as the planned `atr_analyzer` (opt-in) in `skill-scanner` v3.2.0.
+- **docs/ATR-MAPPING.md** — Cross-reference mapping ATR's 10 threat categories to cssc's 26 detection categories (Overlap / Net New / cssc-only sections) and v3.2.0 `atr_analyzer` recommendations.
+- README.md gained an **ATR Integration** section between Detection Categories and Runtime Defense Hooks, pointing to the bundle and the mapping document.
+- SKILL.md gained an **External Reference: Agent Threat Rules (ATR) — bundled** subsection under Detection Rule Packs.
+
+### Changed
+- README.md ATR Acknowledgments updated from "311 rules" to "338 rules in v2.1.2" to reflect upstream snapshot at the time of bundling.
+
+### Notes
+- Acknowledged scope adjustment: Earlier ATR marketing materials referenced a `generic-regex` export, but ATR v2.1.2 CLI exposes only `convert splunk|elastic`. The bundled snapshot includes the YAML source rules under `rules/` and the Splunk SPL export, which together cover the same patterns. See `semgrep-rules/atr/README.md`.
+- npm publish behavior for this bundle (whether `semgrep-rules/atr/` is included via tarball or excluded via `.npmignore`) is **deferred** to a future decision before publishing v3.1.x. v3.1.0 itself remains unpublished at the time of this release.
+
 ## [3.1.0] - 2026-05-11
 
 ### Added

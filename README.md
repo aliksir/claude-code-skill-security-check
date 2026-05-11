@@ -89,7 +89,8 @@ You can also enable automatic checks at Claude Code session start via a SessionS
 │   ├── path-traversal.yml           # Zip Slip / path traversal patterns
 │   ├── sql-injection.yml            # ORM bypass (Django, SQLAlchemy, Sequelize, Prisma)
 │   ├── ssrf.yml                     # Server-Side Request Forgery
-│   └── weak-crypto.yml              # MD5, SHA1, DES, Math.random() for security
+│   ├── weak-crypto.yml              # MD5, SHA1, DES, Math.random() for security
+│   └── atr/                         # Bundled ATR (Agent Threat Rules) v2.1.2 — 338 YAML rules, reference resource
 ├── updater/
 │   ├── README.md                    # Update checker setup guide
 │   └── check-update.sh              # Version check script (manual or SessionStart hook)
@@ -134,6 +135,18 @@ You can also enable automatic checks at Claude Code session start via a SessionS
 
 ---
 
+## ATR Integration (v3.1.1+)
+
+[Agent Threat Rules (ATR) v2.1.2](https://github.com/Agent-Threat-Rule/agent-threat-rules) is bundled as a static reference resource under [`semgrep-rules/atr/`](semgrep-rules/atr/). This includes 338 YAML detection rules across 10 threat categories (1,815 true positives / 1,671 true negatives / 656 evasion tests), plus a Splunk SPL export and the upstream `atr stats` snapshot. **ATR rules are not evaluated by the cssc skill mode or runtime hooks**; they serve as a reference for downstream tooling such as the planned `atr_analyzer` (opt-in) in `skill-scanner` v3.2.0.
+
+- Bundled snapshot details and update procedure: [`semgrep-rules/atr/README.md`](semgrep-rules/atr/README.md)
+- Mapping between ATR's 10 categories and cssc's 26 detection categories: [`docs/ATR-MAPPING.md`](docs/ATR-MAPPING.md)
+- ATR license: [`semgrep-rules/atr/LICENSE`](semgrep-rules/atr/LICENSE) (MIT, Copyright (c) 2026 ATR Contributors)
+
+cssc users do not need to install ATR separately — it ships with the package.
+
+---
+
 ## Runtime Defense Hooks
 
 Three hooks integrate with Claude Code's hook system to block threats at runtime. See [hooks/README.md](hooks/README.md) for installation and configuration.
@@ -170,7 +183,7 @@ This skill was built on lessons learned from auditing 575+ community skills. We 
 
 - **[Zenn article: Claude Code/MCP Security Guide](https://zenn.dev/ytksato/articles/057dc7c981d304)** by DPL — Practical security hardening guide that informed our HTTP exfiltration bypass detection and settings.json audit patterns.
 
-- **[Agent-Threat-Rule/agent-threat-rules](https://github.com/Agent-Threat-Rule/agent-threat-rules)** (ATR) — Open detection standard for AI agent threats (311 rules, MIT). Discussion in [anthropics/skills#492](https://github.com/anthropics/skills/issues/492) helped frame the trust-boundary detection vector against an external benchmark.
+- **[Agent-Threat-Rule/agent-threat-rules](https://github.com/Agent-Threat-Rule/agent-threat-rules)** (ATR) — Open detection standard for AI agent threats (338 rules in v2.1.2, MIT). Bundled in cssc v3.1.1+ under `semgrep-rules/atr/` as a reference resource. Discussion in [anthropics/skills#492](https://github.com/anthropics/skills/issues/492) helped frame the trust-boundary detection vector against an external benchmark.
 
 ### Detection Pattern References
 

@@ -1,0 +1,35 @@
+
+ATR Rule Collection Statistics
+────────────────────────────────────────────────────────────
+  Total rules:     338
+  True positives:  1815
+  True negatives:  1671
+  Evasion tests:   656
+  Rules with CVE:  31
+
+  By Category:
+    prompt-injection         106
+    agent-manipulation       105
+    skill-compromise         35
+    context-exfiltration     33
+    tool-poisoning           28
+    privilege-escalation     13
+    model-abuse              10
+    excessive-autonomy       6
+    data-poisoning           2
+
+  By Severity:
+    critical                 120
+    high                     200
+    medium                   17
+    low                      1
+
+  By Maturity:
+    experimental             300
+    test                     31
+    stable                   7
+
+  By Detection Tier:
+    pattern                  325
+    semantic                 13
+

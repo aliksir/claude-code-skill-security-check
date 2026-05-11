@@ -3,7 +3,7 @@ name: skill-security-check
 description: "Security audit for Claude Code community skills. Scans SKILL.md, references/, and scripts/ for prompt injection, data exfiltration, permission bypass, dangerous commands, supply chain risks, backdoor persistence, API endpoint hijacking, namespace squatting, Unicode homoglyph attacks, context window poisoning, and temporal attack patterns. Can be used as a Claude Code skill (agent-based) or as a standalone CLI tool (skill-scanner). Use: /skill-security-check"
 metadata:
   author: aliks
-  version: "2.5.0"
+  version: "3.1.1"
 risk: low
 source: community
 ---
@@ -105,6 +105,10 @@ Built-in YAML signature packs (`core` pack):
 | `api_hijacking` | ANTHROPIC_BASE_URL override, proxy injection, DNS/hosts manipulation |
 | `cloud_metadata` | IMDS access (169.254.169.254), cloud metadata service token theft |
 | `namespace_abuse` | Official namespace squatting, typosquatting, authority prefix abuse |
+
+#### External Reference: Agent Threat Rules (ATR) — bundled
+
+The `semgrep-rules/atr/` directory bundles [Agent Threat Rules (ATR) v2.1.2](https://github.com/Agent-Threat-Rule/agent-threat-rules) (MIT-licensed): 338 YAML detection rules across 10 threat categories (prompt-injection / agent-manipulation / skill-compromise / context-exfiltration / tool-poisoning / privilege-escalation / model-abuse / excessive-autonomy / model-security / data-poisoning). ATR rules are **bundled with cssc — users do not need to install ATR separately**. They serve as a static reference resource for downstream tooling (e.g., the planned `atr_analyzer` in `skill-scanner` v3.2.0); they are **not evaluated by the skill mode or runtime hooks**. See `semgrep-rules/atr/README.md` for the bundled snapshot details and update procedure, and `docs/ATR-MAPPING.md` for the ATR-to-cssc category mapping.
 
 ### Usage Examples
 

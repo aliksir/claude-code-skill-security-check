@@ -1,6 +1,6 @@
 # Skill Security Check
 
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg) ![Version](https://img.shields.io/badge/version-2.4.5-blue.svg) ![npm](https://img.shields.io/npm/v/claude-code-skill-security-check)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg) ![Version](https://img.shields.io/badge/version-3.1.0-blue.svg) ![npm](https://img.shields.io/npm/v/claude-code-skill-security-check)
 
 A comprehensive security audit tool for Claude Code community skills. Combines a multi-agent skill mode (no installation required) with a standalone CLI tool (`skill-scanner`) to detect malicious patterns, supply-chain risks, and runtime threats in `.md` skill files.
 
@@ -169,6 +169,8 @@ This skill was built on lessons learned from auditing 575+ community skills. We 
 - **[LOLBAS Project](https://lolbas-project.github.io/)** — Living Off The Land Binaries and Scripts for Windows. Complements GTFOBins for Windows-side detection patterns.
 
 - **[Zenn article: Claude Code/MCP Security Guide](https://zenn.dev/ytksato/articles/057dc7c981d304)** by DPL — Practical security hardening guide that informed our HTTP exfiltration bypass detection and settings.json audit patterns.
+
+- **[Agent-Threat-Rule/agent-threat-rules](https://github.com/Agent-Threat-Rule/agent-threat-rules)** (ATR) — Open detection standard for AI agent threats (311 rules, MIT). Discussion in [anthropics/skills#492](https://github.com/anthropics/skills/issues/492) helped frame the trust-boundary detection vector against an external benchmark.
 
 ### Detection Pattern References
 

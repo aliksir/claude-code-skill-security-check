@@ -1,6 +1,6 @@
 {
   "name": "claude-code-skill-security-check",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Security audit plugin for Claude Code — scans skills, hooks, and MCP configs for prompt injection, data exfiltration, supply chain attacks, and 37 threat patterns",
   "bin": "install.js",
   "keywords": [

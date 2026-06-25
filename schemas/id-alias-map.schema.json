@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/aliksir/claude-code-skill-security-check/schemas/id-alias-map.v1.0.0.json",
+  "title": "SARIF Envelope id-alias-map",
+  "description": "Scanner-published sidecar file for DRAFT-to-ATR rule-id reconciliation. Pattern: OSV/CVE/GHSA alias mapping. Tombstone (null) = tried and rejected.",
+  "type": "object",
+  "additionalProperties": {
+    "oneOf": [
+      {
+        "type": "string",
+        "pattern": "^ATR-[A-Z]+-[0-9]+$",
+        "description": "Canonical ATR rule-id (promoted)"
+      },
+      {
+        "type": "null",
+        "description": "Tombstone: DRAFT was tried and rejected"
+      }
+    ]
+  },
+  "propertyNames": {
+    "pattern": "^DRAFT-[a-z]+-[a-z0-9-]+$",
+    "description": "DRAFT rule-id as key"
+  },
+  "examples": [
+    {
+      "DRAFT-bandit-sql-injection": "ATR-SEC-0042",
+      "DRAFT-pda-false-positive": null,
+      "DRAFT-semgrep-path-traversal": "ATR-SEC-0015"
+    }
+  ]
+}

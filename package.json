@@ -21,6 +21,9 @@
     "type": "git",
     "url": "git+https://github.com/aliksir/claude-code-skill-security-check.git"
   },
+  "scripts": {
+    "test": "node --test tests/sarif/*.test.mjs"
+  },
   "engines": {
     "node": ">=18.0.0"
   }

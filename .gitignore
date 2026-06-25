@@ -12,3 +12,4 @@ build/
 
 # 一時退避領域 (CLAUDE.md ルール: file_deletion → move to _deleted/)
 _deleted/
+.test-tmp/

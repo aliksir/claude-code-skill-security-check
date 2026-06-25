@@ -1,12 +1,14 @@
 // id-alias-map.json 生成・マージのテスト
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { join } from "path";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import { writeFileSync, unlinkSync, mkdirSync } from "fs";
 import { generateAliasMap, loadAliasMap, mergeAliasMap, saveAliasMap } from "../../lib/sarif/alias-map.mjs";
 
-// テスト用一時ディレクトリ
-const tmpDir = join(import.meta.dirname, "../../.test-tmp");
+// テスト用一時ディレクトリ（Node 18 互換）
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const tmpDir = join(__dirname, "../../.test-tmp");
 
 describe("generateAliasMap", () => {
   it("昇格済みルールから alias エントリを生成する", () => {

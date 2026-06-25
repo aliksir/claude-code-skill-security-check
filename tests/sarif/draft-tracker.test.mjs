@@ -1,7 +1,8 @@
 // previous-draft-id 追跡のテスト
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { join } from "path";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import { writeFileSync, unlinkSync, mkdirSync } from "fs";
 import {
   loadDraftState,
@@ -12,7 +13,9 @@ import {
   minorVersionDistance,
 } from "../../lib/sarif/draft-tracker.mjs";
 
-const tmpDir = join(import.meta.dirname, "../../.test-tmp");
+// Node 18 互換
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const tmpDir = join(__dirname, "../../.test-tmp");
 
 describe("minorVersionDistance", () => {
   it("同一バージョンは距離 0", () => {

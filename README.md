@@ -94,10 +94,24 @@ You can also enable automatic checks at Claude Code session start via a SessionS
 ├── updater/
 │   ├── README.md                    # Update checker setup guide
 │   └── check-update.sh              # Version check script (manual or SessionStart hook)
+├── lib/sarif/                        # SARIF envelope v1 modules (issue #24)
+│   ├── draft-validator.mjs          # DRAFT rule emit-time validation
+│   ├── alias-map.mjs               # id-alias-map.json generation/merge
+│   └── draft-tracker.mjs           # previous-draft-id state tracking
+├── tests/sarif/                      # SARIF module tests (node:test)
+│   ├── draft-validator.test.mjs
+│   ├── alias-map.test.mjs
+│   └── draft-tracker.test.mjs
 └── iam-policy-template/
     ├── README.md                    # IAM policy usage guide
     ├── claude-code-readonly.json    # Read-only AWS policy
     └── claude-code-dev-deploy.json  # Dev/deploy AWS policy
+```
+
+### Running Tests
+
+```bash
+npm test
 ```
 
 ---

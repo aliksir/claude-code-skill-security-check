@@ -116,4 +116,28 @@ describe("enrichWithArtifactDigest", () => {
 
     rmSync(skillMdPath);
   });
+
+  it("envelope: 各 result に properties.layer = 'content' が付与され既存 properties が維持される", () => {
+    const skillMdPath = join(tmpDir, "SKILL.md");
+    writeFileSync(skillMdPath, "# レイヤーテスト", "utf-8");
+
+    // 既存の properties を持つ result を含む SARIF を用意
+    const sarif = makeSarif([
+      {
+        ruleId: "DRAFT-test-rule",
+        message: { text: "テスト検出" },
+        properties: { tags: ["security"] },
+      },
+    ]);
+
+    const result = enrichWithArtifactDigest(sarif, tmpDir);
+    const props = result.runs[0].results[0].properties;
+
+    // envelope レイヤーが付与されていることを確認
+    assert.equal(props.layer, "content");
+    // 既存の properties が維持されていることを確認
+    assert.deepEqual(props.tags, ["security"]);
+
+    rmSync(skillMdPath);
+  });
 });

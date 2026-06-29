@@ -84,6 +84,37 @@ describe("enrichWithArtifactDigest", () => {
     rmSync(skillMdPath);
   });
 
+  it("正常系: results[].properties.layer が content に設定される", () => {
+    const skillMdPath = join(tmpDir, "SKILL.md");
+    writeFileSync(skillMdPath, "# レイヤーテスト", "utf-8");
+
+    // 既存 properties を持つ result と持たない result を用意
+    const sarif = makeSarif([
+      {
+        ruleId: "DRAFT-no-props",
+        message: { text: "properties なし" },
+        locations: [],
+      },
+      {
+        ruleId: "DRAFT-with-props",
+        message: { text: "既存 properties あり" },
+        properties: { severity: "high" },
+        locations: [],
+      },
+    ]);
+
+    const result = enrichWithArtifactDigest(sarif, tmpDir);
+
+    // properties なしの result に layer: "content" が追加される
+    assert.equal(result.runs[0].results[0].properties.layer, "content");
+
+    // 既存 properties が維持されつつ layer が追加される
+    assert.equal(result.runs[0].results[1].properties.layer, "content");
+    assert.equal(result.runs[0].results[1].properties.severity, "high");
+
+    rmSync(skillMdPath);
+  });
+
   it("異常系: SKILL.md が存在しないディレクトリでエラーがスローされる", () => {
     // SKILL.md を含まない空ディレクトリを作成
     const emptyDir = join(tmpDir, "empty-skill");

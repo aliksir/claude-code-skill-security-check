@@ -6,7 +6,7 @@
       "tool": {
         "driver": {
           "name": "skil-lock",
-          "version": "0.2.3+g5b443d9",
+          "version": "0.2.3-9-gc0ebb91",
           "informationUri": "https://github.com/skills-lock/skil-lock",
           "rules": [
             {
@@ -286,6 +286,11 @@
           ]
         }
       },
+      "invocations": [
+        {
+          "executionSuccessful": true
+        }
+      ],
       "artifacts": [
         {
           "location": {
@@ -424,7 +429,16 @@
             }
           ]
         }
-      ]
+      ],
+      "properties": {
+        "completeness": {
+          "resultsBounded": false,
+          "basis": "complete",
+          "skillsDiscovered": 1,
+          "skillsAnalysed": 1,
+          "skillsUnanalysed": 0
+        }
+      }
     }
   ]
 }

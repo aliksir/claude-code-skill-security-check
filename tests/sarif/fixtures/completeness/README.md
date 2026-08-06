@@ -8,19 +8,50 @@ prompt-defense-audit / Rul1an's emitter and is not here.
 
 All four `.sarif.json` files are real, unedited output of
 [skills-lock/skil-lock](https://github.com/skills-lock/skil-lock) at
-`0.2.3+g5b443d9` (commit `5b443d9`), run in warn mode — the default
-path, since warn is what you get with no `.skil-lock.yaml`. They pin
-current behaviour, defects included; the emitter-side fixes (an
-`invocations` block, the §4 failure channel, the completeness
-declaration) are tracked in skil-lock itself and these fixtures should
-*fail* to reflect reality once those land, at which point they get
-regenerated.
+`0.2.3-9-gc0ebb91`, run in warn mode — the default path, since warn is
+what you get with no `.skil-lock.yaml`.
 
-These fixtures discriminate **readings** of the ratified v1 rule, not
-schema conformance. Per SARIF §3.14.23 a capped run is non-conformant
-regardless of disclosure — do not use these as a validation target.
+**Regenerated after the emitter fix, as promised.** The first version of
+these fixtures pinned pre-fix behaviour, where the swallowed-parse-error
+run was `deepEqual` to a clean run. That hole is now closed
+([skil-lock#44](https://github.com/skills-lock/skil-lock/pull/44)): every
+run declares its coverage at run level, each unanalysed skill gets a
+`warning` notification naming file and reason, and a scan that cannot run
+at all emits `executionSuccessful: false` with an `error`-level
+notification.
+
+The fixtures are more useful after the fix than before, because they now
+discriminate the two **rules** rather than recording one tool's defect:
+
+| Case | Ratified v1 rule | Deferred v1.x run-level declaration |
+|---|---|---|
+| 3 — unanalysed input | same verdict for both runs (vacuous) | **separates them** (`partial` vs `complete`) |
+| 2 — detector-input bound | same verdict for both runs | same verdict for both runs — and correctly so |
+
+Case 2 is the honest limit: both runs declare `basis: "complete"` with
+`skillsUnanalysed: 0`, and both declarations are **true** — the skill
+parsed and was analysed. The bound sits inside the detector, one layer
+below anything a coverage count can see. That is why the three failure
+classes are worth naming separately:
+
+- capped results array → v1 `appliedCap` / `droppedCount`
+- unanalysed input → deferred v1.x run-level declaration
+- bounded detector input → neither rule reaches it; still open
+
+Two readers are provided so this is executable rather than asserted:
+`read-completeness.mjs` implements only the ratified v1 rule;
+`read-run-declaration.mjs` implements the deferred proposal. The key
+names in the latter are one emitter's choice and are not ratified — what
+the fixtures demonstrate is the behaviour of the rule, not the spelling.
+
+These fixtures discriminate **readings**, not schema conformance. Per
+SARIF §3.14.23 a capped run is non-conformant regardless of disclosure —
+do not use these as a validation target.
 
 ## Reproduction
+
+Binary used for the captures: built from skil-lock `main` at `c0ebb91`
+with `-ldflags "-X main.version=0.2.3-9-gc0ebb91"`.
 
 Case 3 — swallowed parse error (`swallowed-parse-error*.sarif.json`):
 
@@ -60,7 +91,11 @@ description: formats release notes
 EOF
 (cd swallowed && skil-lock ci . --format sarif > ../swallowed-parse-error.sarif.json)
 # stderr: warning: .claude/skills/release-notes/SKILL.md: ... missing a required field: "name"
-# exit code: 0. The two JSON files are byte-identical.
+# exit code: 0, and still 0 after the fix — warn mode does not block.
+#
+# Before skil-lock#44 the two JSON files were byte-identical. They now
+# differ in run.properties.completeness (partial vs complete) and in the
+# warning notification naming the skipped file.
 ```
 
 Case 2 — detector-input bound (`narrowed-bound*.sarif.json`):

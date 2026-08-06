@@ -6,7 +6,7 @@
       "tool": {
         "driver": {
           "name": "skil-lock",
-          "version": "0.2.3+g5b443d9",
+          "version": "0.2.3-9-gc0ebb91",
           "informationUri": "https://github.com/skills-lock/skil-lock",
           "rules": [
             {
@@ -286,6 +286,24 @@
           ]
         }
       },
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "toolExecutionNotifications": [
+            {
+              "level": "warning",
+              "message": {
+                "text": ".claude/skills/release-notes/SKILL.md was not analysed (SKILL.md frontmatter is missing a required field: \"name\"); its capability surface is unknown and absent from this report"
+              },
+              "properties": {
+                "skilLockKind": "skill-not-analysed",
+                "path": ".claude/skills/release-notes/SKILL.md",
+                "reason": "SKILL.md frontmatter is missing a required field: \"name\""
+              }
+            }
+          ]
+        }
+      ],
       "results": [],
       "taxonomies": [
         {
@@ -379,7 +397,16 @@
             }
           ]
         }
-      ]
+      ],
+      "properties": {
+        "completeness": {
+          "resultsBounded": false,
+          "basis": "partial",
+          "skillsDiscovered": 2,
+          "skillsAnalysed": 1,
+          "skillsUnanalysed": 1
+        }
+      }
     }
   ]
 }

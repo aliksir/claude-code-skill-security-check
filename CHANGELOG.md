@@ -6,6 +6,9 @@ All notable changes to `skill-security-check` are documented here.
 
 ## [Unreleased]
 
+### Added
+- **invalid-utf8 digest fixture** (`tests/sarif/fixtures/invalid-utf8/SKILL.md`, pinned to `-text binary` in `.gitattributes`) and tests in `tests/sarif/artifact-digest.test.mjs` asserting that the artifact digest is taken over the file's raw bytes, not over a UTF-8-decoded string (issue #24).
+
 ## [3.1.1] - 2026-05-11
 
 ### Added

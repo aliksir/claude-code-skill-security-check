@@ -1,0 +1,3 @@
+# Byte-exact test fixture that contains invalid UTF-8 on purpose (issue #24).
+# Git must never convert its line endings or diff/merge it as text.
+tests/sarif/fixtures/invalid-utf8/SKILL.md -text binary

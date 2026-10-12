@@ -101,7 +101,9 @@ You can also enable automatic checks at Claude Code session start via a SessionS
 ├── tests/sarif/                      # SARIF module tests (node:test)
 │   ├── draft-validator.test.mjs
 │   ├── alias-map.test.mjs
-│   └── draft-tracker.test.mjs
+│   ├── draft-tracker.test.mjs
+│   ├── artifact-digest.test.mjs     # SKILL.md digest injection; raw-byte basis (issue #24)
+│   └── fixtures/invalid-utf8/       # Byte-exact SKILL.md fixture (pinned in .gitattributes)
 └── iam-policy-template/
     ├── README.md                    # IAM policy usage guide
     ├── claude-code-readonly.json    # Read-only AWS policy

@@ -56,13 +56,15 @@ the layout check before any digest is compared.
   longer match.
 - [`.gitattributes`](../../../../.gitattributes) pins this path to
   `-text binary`, so Git does not convert its line endings or diff/merge
-  it as text. Keep that line if the file moves.
+  it as text. If the file moves, update the path on that `.gitattributes`
+  line to the new location.
 - To replace the file, copy the bytes and re-run the checks below.
 - When fetching it from GitHub over the REST API, use the *git blobs*
-  endpoint. On 2026-10-12 the REST *contents* endpoint returned a
-  583-byte re-encoded body for this 577-byte blob, while reporting the
-  blob's own size and SHA; the *git blobs* endpoint returned the
-  original bytes.
+  endpoint. Observed on 2026-10-12 for the same blob in the upstream
+  repository (skills-lock/skil-lock): the default JSON response of the
+  REST *contents* endpoint reported `size` 577 and the blob's SHA, but
+  its base64 `content` decoded to 583 bytes and differed from the blob.
+  The *git blobs* endpoint returned the original 577 bytes.
 
 ## Checks
 
@@ -90,3 +92,11 @@ in skills-lock/skil-lock, retrieved at commit
 - Added upstream in [skills-lock/skil-lock#41](https://github.com/skills-lock/skil-lock/pull/41).
 - The three values were posted in [anthropics/skills#492](https://github.com/anthropics/skills/issues/492).
 - Tracked in this repository in [#24](https://github.com/aliksir/claude-code-skill-security-check/issues/24).
+
+## License
+
+`SKILL.md` in this directory is copied unmodified from skills-lock/skil-lock
+and is licensed under the Apache License, Version 2.0 ("Copyright 2026 The
+SkilLock Authors", per the upstream `NOTICE` file at that commit). A copy of
+that license from the same commit is in [`LICENSE.upstream`](LICENSE.upstream).
+The other files in this directory (this README) are under this repository's license.
